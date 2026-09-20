@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "io.github.floatingpointmc"
@@ -19,9 +20,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    implementation("io.github.vlouboos:serverbridge-api:1.1")
-    implementation("io.github.vlouboos:standaloneevent-api:1.5")
-    implementation("org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:26.1.0")
     annotationProcessor("org.jetbrains:annotations:26.1.0")
     compileOnly("org.projectlombok:lombok:1.18.48")
@@ -38,4 +37,18 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+    mergeServiceFiles()
+    relocate("redis.clients.jedis", "io.github.floatingpointmc.banmanager.libs.jedis")
+    relocate("com.zaxxer.hikari", "io.github.floatingpointmc.banmanager.libs.hikari")
+    relocate("io.github.vlouboos.serverbridge", "io.github.floatingpointmc.banmanager.libs.serverbridge")
+    relocate("io.github.vlouboos.standaloneevent", "io.github.floatingpointmc.banmanager.libs.standaloneevent")
+    minimize()
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }
