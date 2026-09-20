@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public interface Punishment {
-    int getID();
+    int getId();
 
     @NotNull UUID getTarget();
 
@@ -23,11 +23,11 @@ public interface Punishment {
 
     boolean isOverriding();
 
-    @Nullable Punishment getOverridden();
+    @Nullable Punishment getOverriddenPunishment();
 
     boolean isWithdrawn();
 
-    @Nullable Punishment getWithdrawnBy();
+    @Nullable UUID getWithdrawnBy();
 
     @NotNull Type getType();
 }

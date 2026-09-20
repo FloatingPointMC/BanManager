@@ -1,0 +1,4 @@
+name: BanManager
+main: io.github.floatingpointmc.banmanager.spigot.SpigotMain
+author: vlouboos
+version: ${projectVersion}

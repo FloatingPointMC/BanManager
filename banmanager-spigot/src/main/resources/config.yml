@@ -1,0 +1,9 @@
+mode: standalone # standalone or bridge
+
+database:
+  driver: com.mysql.cj.jdbc.Driver
+  host: localhost
+  port: 3306
+  database: banmanager
+  user: root
+  password: ""
