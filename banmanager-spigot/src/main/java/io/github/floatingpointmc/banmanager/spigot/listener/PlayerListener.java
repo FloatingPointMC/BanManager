@@ -8,7 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -26,15 +26,14 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerJoin(PlayerLoginEvent event) {
-        UUID uuid = event.getPlayer().getUniqueId();
+    public void onPlayerJoin(AsyncPlayerPreLoginEvent event) {
+        UUID uuid = event.getUniqueId();
         Collection<Punishment> active = punishManager.queryActivePunishments(uuid);
 
         for (Punishment p : active) {
             if (p.getType() == Type.BAN) {
                 List<String> lines = isTemporary(p) ? messageConfig.getBanTemporary() : messageConfig.getBanPermanent();
-                event.setKickMessage(format(lines, p));
-                event.setResult(PlayerLoginEvent.Result.KICK_BANNED);
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, format(lines, p));
                 return;
             }
         }
