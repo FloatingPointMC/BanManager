@@ -1,14 +1,22 @@
 package io.github.floatingpointmc.sanctionmanager.bungee;
 
 import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.bungee.command.BungeeCommandSender;
 import io.github.floatingpointmc.sanctionmanager.bungee.config.Config;
 import io.github.floatingpointmc.sanctionmanager.bungee.listener.PlayerListener;
 import io.github.floatingpointmc.sanctionmanager.core.BanManagerCore;
+import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
+import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import org.bstats.bungeecord.Metrics;
+import org.incendo.cloud.SenderMapper;
+import org.incendo.cloud.bungee.BungeeCommandManager;
+import org.incendo.cloud.execution.ExecutionCoordinator;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,7 +36,24 @@ public class BungeeMain extends Plugin {
         config.saveDefaultConfig();
         saveDefaultMessages();
         new Metrics(this, PLUGIN_ID);
-        DatabaseConfig databaseConfig = loadDatabaseConfig(config.getConfig());
+        Configuration config = this.config.getConfig();
+        String host = config.getString("mode");
+        if (host.equals("standalone")) {
+            new SanctionCommand(new BungeeCommandManager<>(this,
+                    ExecutionCoordinator.asyncCoordinator(),
+                    new SenderMapper<>() {
+                        @Override
+                        public @NonNull SanctionCommandSender map(@NonNull CommandSender base) {
+                            return new BungeeCommandSender(base);
+                        }
+
+                        @Override
+                        public @NonNull CommandSender reverse(@NonNull SanctionCommandSender mapped) {
+                            return ((BungeeCommandSender) mapped).commandSender;
+                        }
+                    })).buildCommands();
+        }
+        DatabaseConfig databaseConfig = loadDatabaseConfig(config);
         MessageConfig messageConfig = loadMessageConfig();
         core = new BanManagerCore(databaseConfig);
         getProxy().getPluginManager().registerListener(this,

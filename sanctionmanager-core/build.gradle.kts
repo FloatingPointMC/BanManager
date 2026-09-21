@@ -27,6 +27,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.48")
     implementation("redis.clients:jedis:8.0.1")
     implementation("com.zaxxer:HikariCP:4.0.3")
+    implementation("org.incendo:cloud-core:2.0.0")
 }
 
 tasks.processResources {

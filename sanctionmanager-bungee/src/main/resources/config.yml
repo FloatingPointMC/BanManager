@@ -1,3 +1,5 @@
+mode: standalone # standalone or listener
+
 redis:
   enable: false
   host: localhost

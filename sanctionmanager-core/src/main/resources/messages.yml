@@ -3,7 +3,16 @@
 #   %time% - The time the ban will expire if temporary
 #   %reason% - The reason for the punishment
 #   %id% - The ID of the punishment
+#   %name% - The name of the punished player
+#   %uuid% - The UUID of the punished player
+#   %operator% - The operator of the punishment
+#   %plugin% - The name of the plugin
+#   %version% - The version of the plugin
 
+description:
+  - "\u00A7b\u00A7l---------------------------------------------"
+  - "\u00AeRunning \u00A73SanctionManager-%version% \u00A7eby vlouboos"
+  - "\u00A7b\u00A7l---------------------------------------------"
 ban:
   permanent:
     - "\u00A7cYou are permanently banned from the server!"

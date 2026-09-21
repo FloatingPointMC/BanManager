@@ -1,0 +1,15 @@
+{
+  "name": "sanctionmanager",
+  "version": "${projectVersion}",
+  "description": "Velocity plugin for SanctionManager",
+  "author": "vlouboos",
+  "email": "vlouboos@vlouboos.com",
+  "website": "https://vlouboos.com",
+  "license": "MIT",
+  "dependencies": [
+    "standaloneevent"
+  ],
+  "softDependencies": [
+    "serverbridge"
+  ]
+}
