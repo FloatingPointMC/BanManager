@@ -25,8 +25,8 @@ dependencies {
     annotationProcessor("org.jetbrains:annotations:26.1.0")
     compileOnly("org.projectlombok:lombok:1.18.48")
     annotationProcessor("org.projectlombok:lombok:1.18.48")
-    implementation(project(":banmanager-api"))
-    implementation(project(":banmanager-core"))
+    implementation(project(":sanctionmanager-api"))
+    implementation(project(":sanctionmanager-core"))
 }
 
 tasks.processResources {

@@ -5,7 +5,8 @@ pluginManagement {
     }
 }
 
-rootProject.name = "BanManager"
-include("banmanager-api")
-include("banmanager-spigot")
-include("banmanager-core")
+rootProject.name = "SanctionManager"
+include("sanctionmanager-api")
+include("sanctionmanager-spigot")
+include("sanctionmanager-core")
+include("sanctionmanager-bungee")

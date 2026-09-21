@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":banmanager-api"))
+    implementation(project(":sanctionmanager-api"))
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
