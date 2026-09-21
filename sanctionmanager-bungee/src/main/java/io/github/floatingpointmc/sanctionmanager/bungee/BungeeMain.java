@@ -9,6 +9,7 @@ import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -37,8 +38,13 @@ public class BungeeMain extends Plugin {
         saveDefaultMessages();
         new Metrics(this, PLUGIN_ID);
         Configuration config = this.config.getConfig();
-        String host = config.getString("mode");
-        if (host.equals("standalone")) {
+        String mode = config.getString("mode");
+        MessageConfig messageConfig = loadMessageConfig();
+        MessageContext contextTemplate = MessageContext.builder()
+                .pluginName(getDescription().getName())
+                .pluginVersion(getDescription().getVersion())
+                .build();
+        if (mode.equals("standalone")) {
             new SanctionCommand(new BungeeCommandManager<>(this,
                     ExecutionCoordinator.asyncCoordinator(),
                     new SenderMapper<>() {
@@ -51,15 +57,13 @@ public class BungeeMain extends Plugin {
                         public @NonNull CommandSender reverse(@NonNull SanctionCommandSender mapped) {
                             return ((BungeeCommandSender) mapped).commandSender;
                         }
-                    })).buildCommands();
+                    }), messageConfig, contextTemplate).buildCommands();
         }
         DatabaseConfig databaseConfig = loadDatabaseConfig(config);
-        MessageConfig messageConfig = loadMessageConfig();
         core = new BanManagerCore(databaseConfig);
         getProxy().getPluginManager().registerListener(this,
-                new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig));
+                new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
         getLogger().info("BanManager is running in standalone mode.");
-
     }
 
     @Override
@@ -86,12 +90,13 @@ public class BungeeMain extends Plugin {
         if (!file.exists()) {
             config.saveResource("messages.yml", false);
         }
-        Configuration config = this.config.loadConfiguration(file);
+        Configuration cfg = this.config.loadConfiguration(file);
         return MessageConfig.builder()
-                .banPermanent(new ArrayList<>(config.getStringList("ban.permanent")))
-                .banTemporary(new ArrayList<>(config.getStringList("ban.temporary")))
-                .mutePermanent(new ArrayList<>(config.getStringList("mute.permanent")))
-                .muteTemporary(new ArrayList<>(config.getStringList("mute.temporary")))
+                .description(new ArrayList<>(cfg.getStringList("description")))
+                .banPermanent(new ArrayList<>(cfg.getStringList("ban.permanent")))
+                .banTemporary(new ArrayList<>(cfg.getStringList("ban.temporary")))
+                .mutePermanent(new ArrayList<>(cfg.getStringList("mute.permanent")))
+                .muteTemporary(new ArrayList<>(cfg.getStringList("mute.temporary")))
                 .build();
     }
 

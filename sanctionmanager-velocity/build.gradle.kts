@@ -12,9 +12,13 @@ java {
 }
 repositories {
     mavenCentral()
+    maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
 }
 
 dependencies {
+    implementation(project(":sanctionmanager-api"))
+    implementation(project(":sanctionmanager-core"))
+    compileOnly("com.velocitypowered:velocity-api:4.2.0")
 }
 
 tasks.test {

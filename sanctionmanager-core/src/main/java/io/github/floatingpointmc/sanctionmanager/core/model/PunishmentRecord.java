@@ -18,6 +18,7 @@ public class PunishmentRecord implements Punishment {
     private int id;
     private @NotNull UUID target;
     private @Nullable UUID executor;
+    private @NotNull String operatorName;
     private @NotNull LocalDateTime executingTime;
     private @Nullable LocalDateTime expiryTime;
     private boolean overridden;
@@ -26,5 +27,6 @@ public class PunishmentRecord implements Punishment {
     private @Nullable Punishment overriddenPunishment;
     private boolean withdrawn;
     private @Nullable UUID withdrawnBy;
+    private @Nullable String reason;
     private @NotNull Type type;
 }

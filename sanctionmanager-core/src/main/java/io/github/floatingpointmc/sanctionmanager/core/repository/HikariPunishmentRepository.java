@@ -22,6 +22,7 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "target_uuid VARCHAR(36) NOT NULL, " +
                     "executor_uuid VARCHAR(36), " +
+                    "operator_name VARCHAR(64) NOT NULL DEFAULT '[Console]', " +
                     "executing_time TIMESTAMP NOT NULL, " +
                     "expiry_time TIMESTAMP, " +
                     "overridden BOOLEAN NOT NULL DEFAULT FALSE, " +
@@ -44,12 +45,12 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
                     "AND (expiry_time IS NULL OR expiry_time > CURRENT_TIMESTAMP);";
 
     private static final String INSERT_SQL =
-            "INSERT INTO punishment (target_uuid, executor_uuid, executing_time, expiry_time, " +
+            "INSERT INTO punishment (target_uuid, executor_uuid, operator_name, executing_time, expiry_time, " +
                     "overridden, overridden_by_id, overriding, overridden_id, withdrawn, withdrawn_by_uuid, type) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     private static final String UPDATE_SQL =
-            "UPDATE punishment SET target_uuid = ?, executor_uuid = ?, executing_time = ?, expiry_time = ?, " +
+            "UPDATE punishment SET target_uuid = ?, executor_uuid = ?, operator_name = ?, executing_time = ?, expiry_time = ?, " +
                     "overridden = ?, overridden_by_id = ?, overriding = ?, overridden_id = ?, " +
                     "withdrawn = ?, withdrawn_by_uuid = ?, type = ? WHERE id = ?;";
 
@@ -149,7 +150,7 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE_SQL)) {
             setInsertParams(ps, punishment);
-            ps.setInt(12, punishment.getId());
+            ps.setInt(13, punishment.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update punishment: " + punishment.getId(), e);
@@ -182,6 +183,7 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
                 rs.getInt("id"),
                 UUID.fromString(rs.getString("target_uuid")),
                 executorUuidStr != null ? UUID.fromString(executorUuidStr) : null,
+                rs.getString("operator_name"),
                 rs.getTimestamp("executing_time").toLocalDateTime(),
                 expiryTimestamp != null ? expiryTimestamp.toLocalDateTime() : null,
                 rs.getBoolean("overridden"),
@@ -190,6 +192,7 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
                 null,
                 rs.getBoolean("withdrawn"),
                 withdrawnByUuidStr != null ? UUID.fromString(withdrawnByUuidStr) : null,
+                rs.getString("reason"),
                 Type.values()[rs.getByte("type")]
         );
     }
@@ -197,14 +200,15 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
     private void setInsertParams(@NotNull PreparedStatement ps, @NotNull Punishment p) throws SQLException {
         ps.setString(1, p.getTarget().toString());
         ps.setString(2, p.getExecutor() != null ? p.getExecutor().toString() : null);
-        ps.setTimestamp(3, Timestamp.valueOf(p.getExecutingTime()));
-        ps.setTimestamp(4, p.getExpiryTime() != null ? Timestamp.valueOf(p.getExpiryTime()) : null);
-        ps.setBoolean(5, p.isOverridden());
-        ps.setObject(6, p.getOverriddenBy() != null ? p.getOverriddenBy().getId() : null, Types.INTEGER);
-        ps.setBoolean(7, p.isOverriding());
-        ps.setObject(8, p.getOverriddenPunishment() != null ? p.getOverriddenPunishment().getId() : null, Types.INTEGER);
-        ps.setBoolean(9, p.isWithdrawn());
-        ps.setString(10, p.getWithdrawnBy() != null ? p.getWithdrawnBy().toString() : null);
-        ps.setByte(11, (byte) p.getType().ordinal());
+        ps.setString(3, p.getOperatorName());
+        ps.setTimestamp(4, Timestamp.valueOf(p.getExecutingTime()));
+        ps.setTimestamp(5, p.getExpiryTime() != null ? Timestamp.valueOf(p.getExpiryTime()) : null);
+        ps.setBoolean(6, p.isOverridden());
+        ps.setObject(7, p.getOverriddenBy() != null ? p.getOverriddenBy().getId() : null, Types.INTEGER);
+        ps.setBoolean(8, p.isOverriding());
+        ps.setObject(9, p.getOverriddenPunishment() != null ? p.getOverriddenPunishment().getId() : null, Types.INTEGER);
+        ps.setBoolean(10, p.isWithdrawn());
+        ps.setString(11, p.getWithdrawnBy() != null ? p.getWithdrawnBy().toString() : null);
+        ps.setByte(12, (byte) p.getType().ordinal());
     }
 }

@@ -4,6 +4,7 @@ import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.core.BanManagerCore;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
 import io.github.floatingpointmc.sanctionmanager.spigot.bridge.BanManagerBridge;
 import io.github.floatingpointmc.sanctionmanager.spigot.listener.PlayerListener;
 import org.bstats.bukkit.Metrics;
@@ -27,9 +28,13 @@ public class SpigotMain extends JavaPlugin {
         if (mode.equalsIgnoreCase("standalone")) {
             DatabaseConfig databaseConfig = loadDatabaseConfig(getConfig());
             MessageConfig messageConfig = loadMessageConfig();
+            MessageContext contextTemplate = MessageContext.builder()
+                    .pluginName(getDescription().getName())
+                    .pluginVersion(getDescription().getVersion())
+                    .build();
             core = new BanManagerCore(databaseConfig);
             getServer().getPluginManager().registerEvents(
-                    new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig), this);
+                    new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
             getLogger().info("BanManager is running in standalone mode.");
         } else {
             getLogger().warning("BanManager is running under bridge mode, no features available.");
@@ -63,6 +68,7 @@ public class SpigotMain extends JavaPlugin {
         }
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         return MessageConfig.builder()
+                .description(new ArrayList<>(config.getStringList("description")))
                 .banPermanent(new ArrayList<>(config.getStringList("ban.permanent")))
                 .banTemporary(new ArrayList<>(config.getStringList("ban.temporary")))
                 .mutePermanent(new ArrayList<>(config.getStringList("mute.permanent")))

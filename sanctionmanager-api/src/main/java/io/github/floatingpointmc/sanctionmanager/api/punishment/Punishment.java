@@ -13,6 +13,8 @@ public interface Punishment {
 
     @Nullable UUID getExecutor();
 
+    @NotNull String getOperatorName();
+
     @NotNull LocalDateTime getExecutingTime();
 
     @Nullable LocalDateTime getExpiryTime();
@@ -28,6 +30,8 @@ public interface Punishment {
     boolean isWithdrawn();
 
     @Nullable UUID getWithdrawnBy();
+
+    @Nullable String getReason();
 
     @NotNull Type getType();
 }

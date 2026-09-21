@@ -17,6 +17,7 @@ public class PunishmentSerializer {
         return p.getId() + "|" +
                 p.getTarget() + "|" +
                 (p.getExecutor() != null ? p.getExecutor() : "null") + "|" +
+                p.getOperatorName() + "|" +
                 p.getExecutingTime() + "|" +
                 (p.getExpiryTime() != null ? p.getExpiryTime() : "null") + "|" +
                 p.isOverridden() + "|" +
@@ -25,25 +26,28 @@ public class PunishmentSerializer {
                 overriddenId + "|" +
                 p.isWithdrawn() + "|" +
                 withdrawnById + "|" +
+                (p.getReason() != null ? p.getReason() : "null") + "|" +
                 p.getType().name();
     }
 
     public @Nullable Punishment deserialize(@NotNull String data) {
         String[] parts = data.split("\\|");
-        if (parts.length != 12) return null;
+        if (parts.length != 14) return null;
         return new PunishmentRecord(
                 Integer.parseInt(parts[0]),
                 UUID.fromString(parts[1]),
                 "null".equals(parts[2]) ? null : UUID.fromString(parts[2]),
-                LocalDateTime.parse(parts[3]),
-                "null".equals(parts[4]) ? null : LocalDateTime.parse(parts[4]),
-                Boolean.parseBoolean(parts[5]),
+                parts[3],
+                LocalDateTime.parse(parts[4]),
+                "null".equals(parts[5]) ? null : LocalDateTime.parse(parts[5]),
+                Boolean.parseBoolean(parts[6]),
                 null,
-                Boolean.parseBoolean(parts[7]),
+                Boolean.parseBoolean(parts[8]),
                 null,
-                Boolean.parseBoolean(parts[9]),
-                "null".equals(parts[10]) ? null : UUID.fromString(parts[10]),
-                Type.valueOf(parts[11])
+                Boolean.parseBoolean(parts[10]),
+                "null".equals(parts[11]) ? null : UUID.fromString(parts[11]),
+                "null".equals(parts[12]) ? null : parts[12],
+                Type.valueOf(parts[13])
         );
     }
 }

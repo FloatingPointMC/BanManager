@@ -14,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageConfig {
+    private @NotNull List<String> description;
     private @NotNull List<String> banPermanent;
     private @NotNull List<String> banTemporary;
     private @NotNull List<String> mutePermanent;
@@ -21,6 +22,7 @@ public class MessageConfig {
 
     public static @NotNull MessageConfig defaults() {
         return MessageConfig.builder()
+                .description(new ArrayList<>())
                 .banPermanent(new ArrayList<>())
                 .banTemporary(new ArrayList<>())
                 .mutePermanent(new ArrayList<>())

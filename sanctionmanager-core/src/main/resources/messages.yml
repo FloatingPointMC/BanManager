@@ -11,7 +11,8 @@
 
 description:
   - "\u00A7b\u00A7l---------------------------------------------"
-  - "\u00AeRunning \u00A73SanctionManager-%version% \u00A7eby vlouboos"
+  - "\u00A71Running \u00A7bSanctionManager-%version% \u00A7eby vlouboos"
+  - "\u00A73Type '/sm help' to view available commands."
   - "\u00A7b\u00A7l---------------------------------------------"
 ban:
   permanent:
