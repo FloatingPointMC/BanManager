@@ -1,4 +1,4 @@
 name: BanManager
-main: io.github.floatingpointmc.banmanager.spigot.SpigotMain
+main: io.github.floatingpointmc.sanctionmanager.spigot.SpigotMain
 author: vlouboos
 version: ${projectVersion}

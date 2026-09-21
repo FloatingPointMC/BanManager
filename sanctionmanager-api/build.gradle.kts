@@ -1,13 +1,15 @@
 plugins {
     id("java")
+    id("idea")
 }
 
 group = "io.github.floatingpointmc"
 version = "1.0-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
 }
 
 repositories {
@@ -15,9 +17,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     compileOnly("io.github.vlouboos:serverbridge-api:1.1")
     compileOnly("io.github.vlouboos:standaloneevent-api:1.5")
     compileOnly("org.jetbrains:annotations:26.1.0")

@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("idea")
     id("com.gradleup.shadow") version "9.6.1"
 }
 
@@ -7,8 +8,9 @@ group = "io.github.floatingpointmc"
 version = "1.0-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
 }
 
 repositories {
@@ -17,16 +19,14 @@ repositories {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation(project(":sanctionmanager-api"))
+    implementation(project(":sanctionmanager-core"))
     compileOnly("org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:26.1.0")
     annotationProcessor("org.jetbrains:annotations:26.1.0")
     compileOnly("org.projectlombok:lombok:1.18.48")
     annotationProcessor("org.projectlombok:lombok:1.18.48")
-    implementation(project(":sanctionmanager-api"))
-    implementation(project(":sanctionmanager-core"))
+    implementation("org.bstats:bstats-bukkit:3.2.1")
 }
 
 tasks.processResources {
@@ -44,8 +44,7 @@ tasks.shadowJar {
     mergeServiceFiles()
     relocate("redis.clients.jedis", "io.github.floatingpointmc.banmanager.libs.jedis")
     relocate("com.zaxxer.hikari", "io.github.floatingpointmc.banmanager.libs.hikari")
-    relocate("io.github.vlouboos.serverbridge", "io.github.floatingpointmc.banmanager.libs.serverbridge")
-    relocate("io.github.vlouboos.standaloneevent", "io.github.floatingpointmc.banmanager.libs.standaloneevent")
+    relocate("org.bstats", "io.github.floatingpointmc.banmanager.libs.bstats")
     minimize()
 }
 
