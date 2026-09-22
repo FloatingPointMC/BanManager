@@ -4,9 +4,8 @@
   "version": "${projectVersion}",
   "description": "Velocity plugin for SanctionManager",
   "author": "vlouboos",
-  "email": "vlouboos@vlouboos.com",
-  "website": "https://vlouboos.com",
-  "license": "MIT",
+  "website": "https://github.com/FloatingPointMC/SanctionManager",
+  "license": "AGPL-3.0",
   "main": "io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain",
   "dependencies": [
     {
