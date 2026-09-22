@@ -6,15 +6,5 @@
   "author": "vlouboos",
   "website": "https://github.com/FloatingPointMC/SanctionManager",
   "license": "LGPL-3.0",
-  "main": "io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain",
-  "dependencies": [
-    {
-      "id": "standaloneevent",
-      "optional": false
-    },
-    {
-      "id": "serverbridge",
-      "optional": true
-    }
-  ]
+  "main": "io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain"
 }

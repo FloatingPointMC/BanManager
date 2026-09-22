@@ -1,8 +1,8 @@
-package io.github.floatingpointmc.sanctionmanager.core.command;
+package io.github.floatingpointmc.sanctionmanager.minecraft.command;
 
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
 import lombok.RequiredArgsConstructor;
 import org.incendo.cloud.CommandManager;
 

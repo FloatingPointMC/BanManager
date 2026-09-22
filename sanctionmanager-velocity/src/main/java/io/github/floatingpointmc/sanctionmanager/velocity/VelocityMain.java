@@ -1,7 +1,6 @@
 package io.github.floatingpointmc.sanctionmanager.velocity;
 
 import com.google.inject.Inject;
-import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
@@ -9,12 +8,11 @@ import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
-import io.github.floatingpointmc.sanctionmanager.core.SanctionManagerCore;
-import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
-import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
-import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
 import io.github.floatingpointmc.sanctionmanager.velocity.command.VelocityCommandSender;
 import io.github.floatingpointmc.sanctionmanager.velocity.config.Config;
 import io.github.floatingpointmc.sanctionmanager.velocity.listener.PlayerListener;
@@ -22,7 +20,6 @@ import org.bstats.velocity.Metrics;
 import org.incendo.cloud.SenderMapper;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.velocity.VelocityCommandManager;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -35,7 +32,7 @@ public class VelocityMain {
     private final Path dataDirectory;
     private final PluginContainer pluginContainer;
     private final Metrics.Factory metricsFactory;
-    private SanctionManagerCore core;
+    private MinecraftSanctionManager manager;
 
     @Inject
     public VelocityMain(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory, PluginContainer pluginContainer, Metrics.Factory metricsFactory) {
@@ -60,26 +57,23 @@ public class VelocityMain {
                 .pluginVersion(pluginContainer.getDescription().getVersion().orElse("unknown"))
                 .build();
 
+        manager = new MinecraftSanctionManager(
+                config.getString("database.driver", "com.mysql.cj.jdbc.Driver"),
+                config.getString("database.host", "localhost"),
+                config.getInt("database.port", 3306),
+                config.getString("database.database", "sanctionmanager"),
+                config.getString("database.user", "root"),
+                config.getString("database.password", ""));
+
         if ("standalone".equals(mode)) {
-            DatabaseConfig databaseConfig = loadDatabaseConfig(config);
-            core = new SanctionManagerCore(databaseConfig);
-
-            new SanctionCommand(new VelocityCommandManager<>(
-                    pluginContainer,
-                    proxy,
-                    ExecutionCoordinator.asyncCoordinator(),
-                    new SenderMapper<>() {
-                        @Override
-                        public @NonNull SanctionCommandSender map(@NonNull CommandSource base) {
-                            return new VelocityCommandSender(base);
-                        }
-
-                        @Override
-                        public @NonNull CommandSource reverse(@NonNull SanctionCommandSender mapped) {
-                            return ((VelocityCommandSender) mapped).commandSource;
-                        }
-                    }
-            ), messageConfig, contextTemplate).buildCommands();
+            VelocityCommandManager<SanctionCommandSender> commandManager =
+                    new VelocityCommandManager<>(pluginContainer, proxy,
+                            ExecutionCoordinator.asyncCoordinator(),
+                            SenderMapper.create(
+                                    VelocityCommandSender::new,
+                                    mapped -> ((VelocityCommandSender) mapped).commandSource
+                            ));
+            new SanctionCommand(commandManager, messageConfig, contextTemplate).buildCommands();
 
             proxy.getEventManager().register(this, new PlayerListener(
                     SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
@@ -92,21 +86,10 @@ public class VelocityMain {
 
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
-        if (core != null) {
-            core.shutdown();
-            core = null;
+        if (manager != null) {
+            manager.shutdown();
+            manager = null;
         }
-    }
-
-    private DatabaseConfig loadDatabaseConfig(Config config) {
-        return DatabaseConfig.builder()
-                .driver(config.getString("database.driver", "com.mysql.cj.jdbc.Driver"))
-                .host(config.getString("database.host", "localhost"))
-                .port(config.getInt("database.port", 3306))
-                .database(config.getString("database.database", "sanctionmanager"))
-                .user(config.getString("database.user", "root"))
-                .password(config.getString("database.password", ""))
-                .build();
     }
 
     private MessageConfig loadMessageConfig(Config config) {

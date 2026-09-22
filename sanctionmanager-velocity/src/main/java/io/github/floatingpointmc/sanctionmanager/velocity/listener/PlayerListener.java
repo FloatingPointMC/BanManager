@@ -7,9 +7,9 @@ import com.velocitypowered.api.proxy.Player;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
 import net.kyori.adventure.text.Component;
 
 import java.util.Collection;
@@ -43,6 +43,7 @@ public class PlayerListener {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Subscribe
     public void onPlayerChat(PlayerChatEvent event) {
         Player player = event.getPlayer();

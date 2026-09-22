@@ -14,7 +14,7 @@ public interface PunishmentManagerAPI {
 
     void addPunishment(@NotNull Punishment punishment);
 
-    void withdrawPunishment(int id, @NotNull UUID withdrawnBy);
+    void withdrawPunishment(int id, @Nullable UUID withdrawnBy);
 
     void removePunishment(int id);
 }

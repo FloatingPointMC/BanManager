@@ -1,4 +1,4 @@
-package io.github.floatingpointmc.sanctionmanager.core.config;
+package io.github.floatingpointmc.sanctionmanager.minecraft.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

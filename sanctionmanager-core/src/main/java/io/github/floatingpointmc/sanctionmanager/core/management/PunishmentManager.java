@@ -3,10 +3,10 @@ package io.github.floatingpointmc.sanctionmanager.core.management;
 import io.github.floatingpointmc.sanctionmanager.api.events.PunishmentExecuteEvent;
 import io.github.floatingpointmc.sanctionmanager.api.events.PunishmentRemoveEvent;
 import io.github.floatingpointmc.sanctionmanager.api.events.PunishmentWithdrawEvent;
+import io.github.floatingpointmc.sanctionmanager.api.events.SanctionEventBus;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.core.service.PunishmentService;
-import io.github.vlouboos.standaloneevent.api.StandaloneEventAPI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +33,7 @@ public class PunishmentManager implements PunishmentManagerAPI {
     @Override
     public void addPunishment(@NotNull Punishment punishment) {
         PunishmentExecuteEvent event = new PunishmentExecuteEvent(punishment);
-        StandaloneEventAPI.getApi().call(event);
+        SanctionEventBus.call(event);
         if (event.canceled) return;
         service.addPunishment(punishment);
     }
@@ -41,7 +41,7 @@ public class PunishmentManager implements PunishmentManagerAPI {
     @Override
     public void withdrawPunishment(int id, @Nullable UUID withdrawnBy) {
         PunishmentWithdrawEvent event = new PunishmentWithdrawEvent(id, withdrawnBy);
-        StandaloneEventAPI.getApi().call(event);
+        SanctionEventBus.call(event);
         if (event.canceled) return;
         service.withdrawPunishment(id, withdrawnBy);
     }
@@ -49,7 +49,7 @@ public class PunishmentManager implements PunishmentManagerAPI {
     @Override
     public void removePunishment(int id) {
         PunishmentRemoveEvent event = new PunishmentRemoveEvent(id);
-        StandaloneEventAPI.getApi().call(event);
+        SanctionEventBus.call(event);
         if (event.canceled) return;
         service.removePunishment(id);
     }

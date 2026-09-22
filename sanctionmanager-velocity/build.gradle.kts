@@ -18,8 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":sanctionmanager-api"))
-    implementation(project(":sanctionmanager-core"))
+    implementation(project(":sanctionmanager-minecraft"))
     compileOnly("com.velocitypowered:velocity-api:4.2.0")
     compileOnly("org.jetbrains:annotations:26.1.0")
     annotationProcessor("org.jetbrains:annotations:26.1.0")

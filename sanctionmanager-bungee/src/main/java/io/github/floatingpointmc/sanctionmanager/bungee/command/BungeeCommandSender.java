@@ -1,23 +1,21 @@
 package io.github.floatingpointmc.sanctionmanager.bungee.command;
 
-import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
 import lombok.AllArgsConstructor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 
 @AllArgsConstructor
 public class BungeeCommandSender implements SanctionCommandSender {
     public final CommandSender commandSender;
 
     @Override
-    public void sendMessage(@NonNull String message) {
+    public void sendMessage(String message) {
         commandSender.sendMessage(new TextComponent(message));
     }
 
     @Override
-    public boolean hasPermission(@NotNull String permission) {
+    public boolean hasPermission(String permission) {
         return commandSender.hasPermission(permission);
     }
 }

@@ -63,7 +63,7 @@ The dependency relationship is approximately:
    │                  │               │ Infrastructure   │
    │ Spigot           │               │ Redis            │
    │ BungeeCord       │               │ HikariCP         │
-   │ Velocity          │               │                  │
+   │ Velocity         │               │                  │
    └──────────────────┘               └──────────────────┘
 ```
 

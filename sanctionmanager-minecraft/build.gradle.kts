@@ -1,5 +1,5 @@
 plugins {
-    id("java")
+    id("java-library")
     id("idea")
 }
 
@@ -17,6 +17,9 @@ repositories {
 }
 
 dependencies {
+    api(project(":sanctionmanager-api"))
+    implementation(project(":sanctionmanager-core"))
+    implementation("org.incendo:cloud-core:2.0.0")
     compileOnly("org.jetbrains:annotations:26.1.0")
     annotationProcessor("org.jetbrains:annotations:26.1.0")
     compileOnly("org.projectlombok:lombok:1.18.48")

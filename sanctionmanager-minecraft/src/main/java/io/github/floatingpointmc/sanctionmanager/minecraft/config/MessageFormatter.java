@@ -1,4 +1,4 @@
-package io.github.floatingpointmc.sanctionmanager.core.config;
+package io.github.floatingpointmc.sanctionmanager.minecraft.config;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

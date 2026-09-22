@@ -1,31 +1,27 @@
 package io.github.floatingpointmc.sanctionmanager.spigot;
 
 import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
-import io.github.floatingpointmc.sanctionmanager.core.SanctionManagerCore;
-import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
-import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
-import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
 import io.github.floatingpointmc.sanctionmanager.spigot.bridge.SanctionManagerBridge;
 import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotCommandSender;
 import io.github.floatingpointmc.sanctionmanager.spigot.listener.PlayerListener;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.incendo.cloud.SenderMapper;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.paper.LegacyPaperCommandManager;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
 
 public class SpigotMain extends JavaPlugin {
     private static final int PLUGIN_ID = 34182;
-    private SanctionManagerCore core;
+    private MinecraftSanctionManager manager;
 
     @Override
     public void onEnable() {
@@ -34,24 +30,28 @@ public class SpigotMain extends JavaPlugin {
         new Metrics(this, PLUGIN_ID);
         String mode = getConfig().getString("mode");
         if (mode.equalsIgnoreCase("standalone")) {
-            DatabaseConfig databaseConfig = loadDatabaseConfig(getConfig());
             MessageConfig messageConfig = loadMessageConfig();
             MessageContext contextTemplate = MessageContext.builder()
                     .pluginName(getDescription().getName())
                     .pluginVersion(getDescription().getVersion())
                     .build();
-            core = new SanctionManagerCore(databaseConfig);
-            new SanctionCommand(new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(), new SenderMapper<CommandSender, SanctionCommandSender>() {
-                @Override
-                public @NotNull SanctionCommandSender map(@NotNull CommandSender base) {
-                    return new SpigotCommandSender(base);
-                }
 
-                @Override
-                public @NotNull CommandSender reverse(@NotNull SanctionCommandSender mapped) {
-                    return ((SpigotCommandSender) mapped).commandSender;
-                }
-            }), messageConfig, contextTemplate);
+            manager = new MinecraftSanctionManager(
+                    getConfig().getString("database.driver", "com.mysql.cj.jdbc.Driver"),
+                    getConfig().getString("database.host", "localhost"),
+                    getConfig().getInt("database.port", 3306),
+                    getConfig().getString("database.database", "sanctionmanager"),
+                    getConfig().getString("database.user", "root"),
+                    getConfig().getString("database.password", ""));
+
+            LegacyPaperCommandManager<SanctionCommandSender> commandManager =
+                    new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(),
+                            SenderMapper.create(
+                                    SpigotCommandSender::new,
+                                    mapped -> ((SpigotCommandSender) mapped).commandSender
+                            ));
+            new SanctionCommand(commandManager, messageConfig, contextTemplate).buildCommands();
+
             getServer().getPluginManager().registerEvents(
                     new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
             getLogger().info("SanctionManager is running in standalone mode.");
@@ -63,21 +63,10 @@ public class SpigotMain extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (core != null) {
-            core.shutdown();
-            core = null;
+        if (manager != null) {
+            manager.shutdown();
+            manager = null;
         }
-    }
-
-    private DatabaseConfig loadDatabaseConfig(FileConfiguration config) {
-        return DatabaseConfig.builder()
-                .driver(config.getString("database.driver", "com.mysql.cj.jdbc.Driver"))
-                .host(config.getString("database.host", "localhost"))
-                .port(config.getInt("database.port", 3306))
-                .database(config.getString("database.database", "sanctionmanager"))
-                .user(config.getString("database.user", "root"))
-                .password(config.getString("database.password", ""))
-                .build();
     }
 
     private MessageConfig loadMessageConfig() {

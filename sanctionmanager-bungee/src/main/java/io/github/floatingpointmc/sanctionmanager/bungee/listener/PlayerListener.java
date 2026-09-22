@@ -3,9 +3,9 @@ package io.github.floatingpointmc.sanctionmanager.bungee.listener;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.core.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
@@ -46,8 +46,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerChat(ChatEvent event) {
-        if (event.getSender() instanceof ProxiedPlayer) {
-            ProxiedPlayer player = (ProxiedPlayer) event.getSender();
+        if (event.getSender() instanceof ProxiedPlayer player) {
             UUID uuid = player.getUniqueId();
             Collection<Punishment> active = punishManager.queryActivePunishments(uuid);
             for (Punishment p : active) {
