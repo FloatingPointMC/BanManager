@@ -1,19 +1,17 @@
-package io.github.floatingpointmc.sanctionmanager.bungee.command;
+package io.github.floatingpointmc.sanctionmanager.spigot.command;
 
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import lombok.AllArgsConstructor;
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 
 @AllArgsConstructor
-public class BungeeCommandSender implements SanctionCommandSender {
+public class SpigotCommandSender implements SanctionCommandSender {
     public final CommandSender commandSender;
 
     @Override
-    public void sendMessage(@NonNull String message) {
-        commandSender.sendMessage(new TextComponent(message));
+    public void sendMessage(@NotNull String message) {
+        commandSender.sendMessage(message);
     }
 
     @Override

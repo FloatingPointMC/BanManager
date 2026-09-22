@@ -27,6 +27,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.48")
     annotationProcessor("org.projectlombok:lombok:1.18.48")
     implementation("org.bstats:bstats-bukkit:3.2.1")
+    implementation("org.incendo:cloud-paper:2.0.0-beta.10")
 }
 
 tasks.processResources {

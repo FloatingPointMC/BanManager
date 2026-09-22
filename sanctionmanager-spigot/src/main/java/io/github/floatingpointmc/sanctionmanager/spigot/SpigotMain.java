@@ -2,15 +2,23 @@ package io.github.floatingpointmc.sanctionmanager.spigot;
 
 import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.core.BanManagerCore;
+import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
 import io.github.floatingpointmc.sanctionmanager.spigot.bridge.BanManagerBridge;
+import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotCommandSender;
 import io.github.floatingpointmc.sanctionmanager.spigot.listener.PlayerListener;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.incendo.cloud.SenderMapper;
+import org.incendo.cloud.execution.ExecutionCoordinator;
+import org.incendo.cloud.paper.LegacyPaperCommandManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,6 +41,17 @@ public class SpigotMain extends JavaPlugin {
                     .pluginVersion(getDescription().getVersion())
                     .build();
             core = new BanManagerCore(databaseConfig);
+            new SanctionCommand(new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(), new SenderMapper<CommandSender, SanctionCommandSender>() {
+                @Override
+                public @NotNull SanctionCommandSender map(@NotNull CommandSender base) {
+                    return new SpigotCommandSender(base);
+                }
+
+                @Override
+                public @NotNull CommandSender reverse(@NotNull SanctionCommandSender mapped) {
+                    return ((SpigotCommandSender) mapped).commandSender;
+                }
+            }), messageConfig, contextTemplate);
             getServer().getPluginManager().registerEvents(
                     new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
             getLogger().info("BanManager is running in standalone mode.");
