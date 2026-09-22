@@ -44,7 +44,7 @@ public class BungeeMain extends Plugin {
                 .pluginName(getDescription().getName())
                 .pluginVersion(getDescription().getVersion())
                 .build();
-        if (mode.equals("standalone")) {
+        if ("standalone".equals(mode)) {
             new SanctionCommand(new BungeeCommandManager<>(this,
                     ExecutionCoordinator.asyncCoordinator(),
                     new SenderMapper<>() {
@@ -58,12 +58,14 @@ public class BungeeMain extends Plugin {
                             return ((BungeeCommandSender) mapped).commandSender;
                         }
                     }), messageConfig, contextTemplate).buildCommands();
+            getLogger().info("SanctionManager is running in standalone mode.");
+        } else {
+            getLogger().info("SanctionManager is running in proxy mode, no commands available.");
         }
         DatabaseConfig databaseConfig = loadDatabaseConfig(config);
         core = new SanctionManagerCore(databaseConfig);
         getProxy().getPluginManager().registerListener(this,
                 new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
-        getLogger().info("SanctionManager is running in standalone mode.");
     }
 
     @Override

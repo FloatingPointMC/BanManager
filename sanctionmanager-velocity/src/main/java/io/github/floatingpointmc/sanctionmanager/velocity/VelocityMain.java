@@ -60,7 +60,7 @@ public class VelocityMain {
                 .pluginVersion(pluginContainer.getDescription().getVersion().orElse("unknown"))
                 .build();
 
-        if ("standalone".equalsIgnoreCase(mode)) {
+        if ("standalone".equals(mode)) {
             DatabaseConfig databaseConfig = loadDatabaseConfig(config);
             core = new SanctionManagerCore(databaseConfig);
 
@@ -86,7 +86,7 @@ public class VelocityMain {
 
             logger.info("SanctionManager is running in standalone mode.");
         } else {
-            logger.warn("SanctionManager is running under bridge mode, no features available.");
+            logger.warn("SanctionManager is running in proxy mode, no commands available.");
         }
     }
 
