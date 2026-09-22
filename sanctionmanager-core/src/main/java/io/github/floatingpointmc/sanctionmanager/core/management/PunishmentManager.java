@@ -31,6 +31,16 @@ public class PunishmentManager implements PunishmentManagerAPI {
     }
 
     @Override
+    public @NotNull Collection<Punishment> queryActiveBans(@NotNull UUID target) {
+        return service.queryActiveBans(target);
+    }
+
+    @Override
+    public @NotNull Collection<Punishment> queryActiveMutes(@NotNull UUID target) {
+        return service.queryActiveMutes(target);
+    }
+
+    @Override
     public void addPunishment(@NotNull Punishment punishment) {
         PunishmentExecuteEvent event = new PunishmentExecuteEvent(punishment);
         SanctionEventBus.call(event);

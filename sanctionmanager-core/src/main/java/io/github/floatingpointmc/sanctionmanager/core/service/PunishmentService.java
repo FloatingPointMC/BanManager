@@ -43,6 +43,22 @@ public class PunishmentService {
         return fromDb;
     }
 
+    public @NotNull Collection<Punishment> queryActiveBans(@NotNull UUID target) {
+        Collection<Punishment> fromDb = repository.findActiveBansByTarget(target);
+        for (Punishment p : fromDb) {
+            cache.put(p);
+        }
+        return fromDb;
+    }
+
+    public @NotNull Collection<Punishment> queryActiveMutes(@NotNull UUID target) {
+        Collection<Punishment> fromDb = repository.findActiveMutesByTarget(target);
+        for (Punishment p : fromDb) {
+            cache.put(p);
+        }
+        return fromDb;
+    }
+
     public void addPunishment(@NotNull Punishment punishment) {
         repository.save(punishment);
         cache.put(punishment);

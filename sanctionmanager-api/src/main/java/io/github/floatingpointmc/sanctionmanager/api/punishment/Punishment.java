@@ -9,6 +9,8 @@ import java.util.UUID;
 public interface Punishment {
     int getId();
 
+    int getRelId();
+
     @NotNull UUID getTarget();
 
     @Nullable UUID getExecutor();

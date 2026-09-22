@@ -15,6 +15,7 @@ public class PunishmentSerializer {
         String overriddenId = p.getOverriddenPunishment() != null ? String.valueOf(p.getOverriddenPunishment().getId()) : "null";
         String withdrawnById = p.getWithdrawnBy() != null ? p.getWithdrawnBy().toString() : "null";
         return p.getId() + "|" +
+                p.getRelId() + "|" +
                 p.getTarget() + "|" +
                 (p.getExecutor() != null ? p.getExecutor() : "null") + "|" +
                 p.getOperatorName() + "|" +
@@ -32,22 +33,23 @@ public class PunishmentSerializer {
 
     public @Nullable Punishment deserialize(@NotNull String data) {
         String[] parts = data.split("\\|");
-        if (parts.length != 14) return null;
+        if (parts.length != 15) return null;
         return new PunishmentRecord(
                 Integer.parseInt(parts[0]),
-                UUID.fromString(parts[1]),
-                "null".equals(parts[2]) ? null : UUID.fromString(parts[2]),
-                parts[3],
-                LocalDateTime.parse(parts[4]),
-                "null".equals(parts[5]) ? null : LocalDateTime.parse(parts[5]),
-                Boolean.parseBoolean(parts[6]),
+                Integer.parseInt(parts[1]),
+                UUID.fromString(parts[2]),
+                "null".equals(parts[3]) ? null : UUID.fromString(parts[3]),
+                parts[4],
+                LocalDateTime.parse(parts[5]),
+                "null".equals(parts[6]) ? null : LocalDateTime.parse(parts[6]),
+                Boolean.parseBoolean(parts[7]),
                 null,
-                Boolean.parseBoolean(parts[8]),
+                Boolean.parseBoolean(parts[9]),
                 null,
-                Boolean.parseBoolean(parts[10]),
-                "null".equals(parts[11]) ? null : UUID.fromString(parts[11]),
-                "null".equals(parts[12]) ? null : parts[12],
-                Type.valueOf(parts[13])
+                Boolean.parseBoolean(parts[11]),
+                "null".equals(parts[12]) ? null : UUID.fromString(parts[12]),
+                "null".equals(parts[13]) ? null : parts[13],
+                Type.valueOf(parts[14])
         );
     }
 }

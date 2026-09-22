@@ -64,6 +64,7 @@ public class PlayerListener {
     private MessageContext.Punishment toContext(Punishment p, String targetName) {
         return MessageContext.Punishment.builder()
                 .id(p.getId())
+                .relId(p.getRelId())
                 .target(p.getTarget())
                 .targetName(targetName)
                 .executor(p.getExecutor() != null ? p.getExecutor() : new UUID(0, 0))

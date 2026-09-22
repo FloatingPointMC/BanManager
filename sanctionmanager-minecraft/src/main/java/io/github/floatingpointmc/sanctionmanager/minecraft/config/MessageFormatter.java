@@ -21,6 +21,7 @@ public final class MessageFormatter {
                                                    @NotNull MessageContext.Punishment context) {
         String result = line;
         result = result.replace("%id%", String.valueOf(context.getId()));
+        result = result.replace("%rel_id%", String.valueOf(context.getRelId()));
         result = result.replace("%reason%", context.getReason() != null ? context.getReason() : "");
         result = result.replace("%name%", context.getTargetName() != null ? context.getTargetName() : context.getTarget().toString());
         result = result.replace("%uuid%", context.getTarget().toString());

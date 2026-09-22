@@ -36,7 +36,7 @@ public class SanctionManagerCoreTest {
         });
 
         PunishmentRecord punishment = new PunishmentRecord(
-                1, UUID.randomUUID(), UUID.randomUUID(), "Console",
+                1, 1, UUID.randomUUID(), UUID.randomUUID(), "Console",
                 LocalDateTime.now(), null, false, null, false, null,
                 false, null, "Test reason", Type.BAN
         );
@@ -52,7 +52,7 @@ public class SanctionManagerCoreTest {
         SanctionEventBus.setHandler(event -> event.canceled = true);
 
         PunishmentRecord punishment = new PunishmentRecord(
-                2, UUID.randomUUID(), UUID.randomUUID(), "Console",
+                2, 2, UUID.randomUUID(), UUID.randomUUID(), "Console",
                 LocalDateTime.now(), null, false, null, false, null,
                 false, null, "Cancelled test", Type.MUTE
         );
@@ -67,7 +67,7 @@ public class SanctionManagerCoreTest {
     void testLocalPunishmentCachePutAndFind() {
         UUID target = UUID.randomUUID();
         PunishmentRecord punishment = new PunishmentRecord(
-                10, target, null, "Console",
+                10, 5, target, null, "Console",
                 LocalDateTime.now(), null, false, null, false, null,
                 false, null, "Cache test", Type.BAN
         );
@@ -78,6 +78,7 @@ public class SanctionManagerCoreTest {
         assertNotNull(found);
         assertEquals(target, found.getTarget());
         assertEquals(Type.BAN, found.getType());
+        assertEquals(5, found.getRelId());
 
         Collection<Punishment> active = cache.findActiveByTarget(target);
         assertFalse(active.isEmpty());
@@ -88,7 +89,7 @@ public class SanctionManagerCoreTest {
     void testLocalPunishmentCacheInvalidate() {
         UUID target = UUID.randomUUID();
         PunishmentRecord punishment = new PunishmentRecord(
-                20, target, null, "Console",
+                20, 10, target, null, "Console",
                 LocalDateTime.now(), null, false, null, false, null,
                 false, null, "Invalidate test", Type.BAN
         );
@@ -122,5 +123,54 @@ public class SanctionManagerCoreTest {
                 .password("")
                 .build();
         assertTrue(sqliteConfig.getJdbcUrl().startsWith("jdbc:sqlite:"));
+    }
+
+    @Test
+    void testRelIdNotGloballyUnique() {
+        UUID banTarget = UUID.randomUUID();
+        UUID muteTarget = UUID.randomUUID();
+
+        PunishmentRecord ban = new PunishmentRecord(
+                1, 1, banTarget, null, "Console",
+                LocalDateTime.now(), null, false, null, false, null,
+                false, null, "Ban reason", Type.BAN
+        );
+
+        PunishmentRecord mute = new PunishmentRecord(
+                2, 1, muteTarget, null, "Console",
+                LocalDateTime.now(), null, false, null, false, null,
+                false, null, "Mute reason", Type.MUTE
+        );
+
+        cache.put(ban);
+        cache.put(mute);
+
+        Punishment foundBan = cache.findById(1);
+        Punishment foundMute = cache.findById(2);
+
+        assertNotNull(foundBan);
+        assertNotNull(foundMute);
+        assertEquals(1, foundBan.getRelId());
+        assertEquals(1, foundMute.getRelId());
+        assertEquals(Type.BAN, foundBan.getType());
+        assertEquals(Type.MUTE, foundMute.getType());
+    }
+
+    @Test
+    void testTypeOrdinary() {
+        assertEquals(0, Type.BAN.ordinary());
+        assertEquals(1, Type.MUTE.ordinary());
+    }
+
+    @Test
+    void testPunishmentRecordRelIdField() {
+        PunishmentRecord record = new PunishmentRecord(
+                100, 42, UUID.randomUUID(), UUID.randomUUID(), "Admin",
+                LocalDateTime.now(), null, false, null, false, null,
+                false, null, "Test", Type.BAN
+        );
+        assertEquals(100, record.getId());
+        assertEquals(42, record.getRelId());
+        assertEquals(Type.BAN, record.getType());
     }
 }

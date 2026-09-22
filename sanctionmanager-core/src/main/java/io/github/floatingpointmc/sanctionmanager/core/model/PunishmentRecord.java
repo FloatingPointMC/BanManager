@@ -16,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PunishmentRecord implements Punishment {
     private int id;
+    private int relId;
     private @NotNull UUID target;
     private @Nullable UUID executor;
     private @NotNull String operatorName;

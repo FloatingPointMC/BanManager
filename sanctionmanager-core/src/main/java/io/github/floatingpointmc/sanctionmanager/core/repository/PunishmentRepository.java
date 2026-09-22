@@ -14,6 +14,10 @@ public interface PunishmentRepository {
 
     @NotNull Collection<Punishment> findActiveByTarget(@NotNull UUID target);
 
+    @NotNull Collection<Punishment> findActiveBansByTarget(@NotNull UUID target);
+
+    @NotNull Collection<Punishment> findActiveMutesByTarget(@NotNull UUID target);
+
     void save(@NotNull Punishment punishment);
 
     void update(@NotNull Punishment punishment);

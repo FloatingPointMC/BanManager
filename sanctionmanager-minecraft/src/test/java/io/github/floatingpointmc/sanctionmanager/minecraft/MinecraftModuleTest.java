@@ -17,6 +17,7 @@ public class MinecraftModuleTest {
     void testMessageFormatterReplaceVariables() {
         MessageContext.Punishment context = MessageContext.Punishment.builder()
                 .id(42)
+                .relId(7)
                 .target(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .targetName("TestPlayer")
                 .executor(UUID.fromString("00000000-0000-0000-0000-000000000002"))
@@ -30,6 +31,39 @@ public class MinecraftModuleTest {
         String result = MessageFormatter.replaceVariables(
                 "Player %name% banned for %reason% by %operator%", context);
         assertEquals("Player TestPlayer banned for Hacking by Admin", result);
+    }
+
+    @Test
+    void testMessageFormatterRelIdPlaceholder() {
+        MessageContext.Punishment context = MessageContext.Punishment.builder()
+                .id(42)
+                .relId(7)
+                .target(UUID.randomUUID())
+                .executor(UUID.randomUUID())
+                .executingTime(LocalDateTime.now())
+                .reason("Test")
+                .pluginName("SanctionManager")
+                .pluginVersion("1.0")
+                .build();
+
+        String result = MessageFormatter.replaceVariables("Ban record #%rel_id% (punishment #%id%)", context);
+        assertEquals("Ban record #7 (punishment #42)", result);
+    }
+
+    @Test
+    void testMessageFormatterIdAndRelIdDistinct() {
+        MessageContext.Punishment context = MessageContext.Punishment.builder()
+                .id(100)
+                .relId(50)
+                .target(UUID.randomUUID())
+                .executor(UUID.randomUUID())
+                .executingTime(LocalDateTime.now())
+                .pluginName("SM")
+                .pluginVersion("2.0")
+                .build();
+
+        String result = MessageFormatter.replaceVariables("%id%/%rel_id%", context);
+        assertEquals("100/50", result);
     }
 
     @Test
@@ -51,6 +85,7 @@ public class MinecraftModuleTest {
     void testMessageFormatterIsTemporary() {
         MessageContext.Punishment permanent = MessageContext.Punishment.builder()
                 .id(1)
+                .relId(1)
                 .target(UUID.randomUUID())
                 .executor(UUID.randomUUID())
                 .executingTime(LocalDateTime.now())
@@ -59,6 +94,7 @@ public class MinecraftModuleTest {
 
         MessageContext.Punishment temporary = MessageContext.Punishment.builder()
                 .id(2)
+                .relId(2)
                 .target(UUID.randomUUID())
                 .executor(UUID.randomUUID())
                 .executingTime(LocalDateTime.now())

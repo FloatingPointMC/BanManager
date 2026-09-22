@@ -21,6 +21,7 @@ public class MessageContext {
     @AllArgsConstructor
     public static class Punishment {
         private int id;
+        private int relId;
         private @NotNull UUID target;
         private @Nullable String targetName;
         private @NotNull UUID executor;
@@ -37,6 +38,7 @@ public class MessageContext {
 
         public static class PunishmentBuilder {
             private int id;
+            private int relId;
             private @NotNull UUID target;
             private @Nullable String targetName;
             private @NotNull UUID executor;
@@ -49,6 +51,11 @@ public class MessageContext {
 
             public PunishmentBuilder id(int id) {
                 this.id = id;
+                return this;
+            }
+
+            public PunishmentBuilder relId(int relId) {
+                this.relId = relId;
                 return this;
             }
 
@@ -98,7 +105,7 @@ public class MessageContext {
             }
 
             public Punishment build() {
-                return new Punishment(id, target, targetName, executor, operatorName, executingTime, expiryTime, reason, pluginName, pluginVersion);
+                return new Punishment(id, relId, target, targetName, executor, operatorName, executingTime, expiryTime, reason, pluginName, pluginVersion);
             }
         }
     }
