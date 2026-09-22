@@ -29,7 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class VelocityMain {
-    private static final int PLUGIN_ID = 34184;
+    private static final int PLUGIN_ID = 34210;
     private final ProxyServer proxy;
     private final Logger logger;
     private final Path dataDirectory;
