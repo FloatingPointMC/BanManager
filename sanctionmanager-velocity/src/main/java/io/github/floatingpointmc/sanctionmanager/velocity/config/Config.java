@@ -1,7 +1,6 @@
 package io.github.floatingpointmc.sanctionmanager.velocity.config;
 
 import org.slf4j.Logger;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
@@ -54,21 +53,18 @@ public class Config {
         return getString(path, null);
     }
 
-    @SuppressWarnings("unchecked")
     public String getString(String path, String def) {
         ensureLoaded();
         Object value = getNested(data, path);
         return value != null ? String.valueOf(value) : def;
     }
 
-    @SuppressWarnings("unchecked")
     public int getInt(String path, int def) {
         ensureLoaded();
         Object value = getNested(data, path);
         return value instanceof Number ? ((Number) value).intValue() : def;
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> getStringList(String path) {
         ensureLoaded();
         Object value = getNested(data, path);
@@ -82,6 +78,7 @@ public class Config {
         return Collections.emptyList();
     }
 
+    @SuppressWarnings("unchecked")
     private Object getNested(Map<String, Object> map, String path) {
         String[] keys = path.split("\\.");
         Object current = map;

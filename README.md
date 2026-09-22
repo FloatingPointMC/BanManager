@@ -1,104 +1,307 @@
 # SanctionManager
 
-**SanctionManager** is a modular punishment management system for Minecraft server networks.
+SanctionManager is a standalone, platform-independent sanction management system. It provides a reusable backend for managing player sanctions — bans and mutes — with persistent storage, caching, and a public API.
 
-It provides a shared API and core implementation for managing player sanctions across multiple Minecraft server platforms, with support for **Spigot, BungeeCord, and Velocity**.
-
-The project is designed with a modular architecture so that platform-specific code remains separated from the common punishment and data-management logic.
+Minecraft is one integration platform for SanctionManager, not its foundation. The core business logic has zero dependency on Minecraft APIs. Minecraft integrations are implemented as adapters that connect platform-specific events, commands, and messaging to the core.
 
 ## Features
 
-* Modular architecture with a shared API and core
-* Support for:
-
-    * Spigot
-    * BungeeCord
-    * Velocity
-* Cross-server punishment management
-* Shared punishment data through a central storage layer
-* Redis support for network-wide communication and data synchronization
-* Connection pooling through HikariCP
-* Command handling powered by Cloud
-* Public API for integration with other plugins
-* Java 8-compatible API and core
+* Platform-independent sanction management core
+* Punishment types: ban and mute
+* Persistent storage via JDBC (MySQL, MariaDB, PostgreSQL, SQLite)
+* Connection pooling via HikariCP
+* Local in-memory punishment cache
+* Redis distributed cache via Jedis
+* Cancellable event system (`PunishmentExecuteEvent`, `PunishmentWithdrawEvent`, `PunishmentRemoveEvent`)
+* Platform-independent public API for external integrations
+* Minecraft adapters for Spigot, BungeeCord, and Velocity
+* Cloud command framework integration in the Minecraft adapter layer
+* Configurable message templates with variable substitution
 * Shaded and relocated runtime dependencies for platform plugins
 
 ## Architecture
 
-SanctionManager is divided into several Gradle modules:
+SanctionManager enforces a strict, unidirectional dependency chain:
 
 ```text
-SanctionManager
-├── sanctionmanager-api
-│   └── Public API and shared interfaces
-│
-├── sanctionmanager-core
-│   └── Common implementation and data layer
-│
-├── sanctionmanager-spigot
-│   └── Spigot/Bukkit integration
-│
-├── sanctionmanager-bungee
-│   └── BungeeCord integration
-│
-└── sanctionmanager-velocity
-    └── Velocity integration
+sanctionmanager-spigot    ─┐
+sanctionmanager-bungee    ─┤
+sanctionmanager-velocity  ─┘
+            │
+            │ depends on
+            ▼
+sanctionmanager-minecraft
+            │
+            │ depends on
+            ▼
+sanctionmanager-core
+            │
+            │ depends on
+            ▼
+sanctionmanager-api
 ```
 
-The dependency relationship is approximately:
+Platform adapters never depend on core directly. They interact with core exclusively through the `sanctionmanager-minecraft` adapter layer.
+
+### Dependency boundaries
+
+| From | To | Allowed |
+|------|----|---------|
+| Platform adapter (spigot/bungee/velocity) | `sanctionmanager-minecraft` | Yes |
+| Platform adapter (spigot/bungee/velocity) | `sanctionmanager-core` | **No** |
+| `sanctionmanager-minecraft` | `sanctionmanager-core` | Yes |
+| `sanctionmanager-minecraft` | `sanctionmanager-api` | Yes |
+| `sanctionmanager-core` | `sanctionmanager-api` | Yes |
+| `sanctionmanager-core` | Minecraft / Bukkit / Cloud | **No** |
+
+### Core
+
+`sanctionmanager-core` is the platform-independent business core. It contains:
+
+* `SanctionManagerCore` — bootstrap and lifecycle entry point
+* `PunishmentManager` — implements `PunishmentManagerAPI`, fires events on mutation
+* `PunishmentService` — cache-first query logic, delegates to repository
+* `PunishmentRepository` / `HikariPunishmentRepository` — JDBC persistence with auto-schema creation
+* `PunishmentCache` / `LocalPunishmentCache` / `RedisPunishmentCache` — caching abstraction
+* `PunishmentSerializer` — serialization for Redis storage
+* `PunishmentRecord` — domain model implementing the `Punishment` interface
+* `DatabaseConfig` — database connection configuration (driver, host, port, database, credentials)
+* `SanctionEventBus` — platform-independent event dispatch
+
+Core never references `Player`, `CommandSender`, `Bukkit`, `Component`, `Cloud`, or any Minecraft-specific type.
+
+### API
+
+`sanctionmanager-api` defines platform-independent contracts:
+
+* `SanctionManager` — root interface exposing `PunishmentManagerAPI`
+* `SanctionManagerAPI` — static accessor for the registered `SanctionManager` instance
+* `PunishmentManagerAPI` — query, add, withdraw, and remove punishments
+* `Punishment` — read-only interface for punishment data (target, executor, type, times, reason, etc.)
+* `Type` — enum: `BAN`, `MUTE`
+* `SanctionEvent` — base event with cancellation support
+* `PunishmentExecuteEvent`, `PunishmentWithdrawEvent`, `PunishmentRemoveEvent` — domain events
+
+### Minecraft Adapter
+
+`sanctionmanager-minecraft` is the Minecraft-specific integration layer. It bridges Minecraft-facing concerns to the core:
+
+* `MinecraftSanctionManager` — initializes `SanctionManagerCore` and exposes `PunishmentManagerAPI`
+* `SanctionCommand` — Cloud-based command handler for the `/sanction` command
+* `SanctionCommandSender` — platform-independent command sender abstraction
+* `MessageConfig` — configurable message templates (ban permanent/temporary, mute permanent/temporary, description)
+* `MessageContext` — template variable context (punishment data, plugin name/version)
+* `MessageFormatter` — variable substitution (`%name%`, `%reason%`, `%operator%`, `%duration%`, `%id%`, `%uuid%`, `%time%`, `%plugin%`, `%version%`)
+
+Cloud Command Framework belongs to this layer, not to core or platform adapters.
+
+### Platform Adapters
+
+Each platform adapter is responsible for:
+
+* Plugin lifecycle (enable/disable)
+* Platform-specific event listeners (login, chat)
+* Command sender mapping (platform `CommandSource` → `SanctionCommandSender`)
+* Platform-specific `CommandManager` instantiation (Cloud Paper/Bungee/Velocity)
+* Message delivery to players using platform APIs
+* Configuration loading
+* bStats metrics
+
+Platform adapters do not instantiate `SanctionManagerCore` directly. They use `MinecraftSanctionManager` from the Minecraft adapter layer.
+
+## Message System
+
+Message presentation is a platform responsibility. Core returns business results — `Punishment` objects, event notifications — without any reference to Minecraft messaging.
+
+The flow is:
 
 ```text
-                    ┌────────────────────┐
-                    │ sanctionmanager-api│
-                    └─────────┬──────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │ sanctionmanager-core│
-                    └───────┬─────┬──────┘
-                            │     │
-              ┌─────────────┘     └──────────────┐
-              ▼                                  ▼
-   ┌──────────────────┐               ┌──────────────────┐
-   │ Platform Modules │               │ Network / Storage│
-   │                  │               │ Infrastructure   │
-   │ Spigot           │               │ Redis            │
-   │ BungeeCord       │               │ HikariCP         │
-   │ Velocity         │               │                  │
-   └──────────────────┘               └──────────────────┘
+Core → Punishment / Event / Result
+         │
+         ▼
+Minecraft Adapter → MessageFormatter → formatted String
+         │
+         ▼
+Platform Adapter → CommandSource.sendMessage(Component)
 ```
 
-## Platform Support
+Core never calls `Player.sendMessage()`, `CommandSender.sendMessage()`, or any platform messaging API.
 
-| Module                     | Platform                 |    Java |
-| -------------------------- | ------------------------ | ------: |
-| `sanctionmanager-api`      | Platform-independent API |  Java 8 |
-| `sanctionmanager-core`     | Common implementation    |  Java 8 |
-| `sanctionmanager-spigot`   | Spigot/Bukkit            |  Java 8 |
-| `sanctionmanager-bungee`   | BungeeCord               | Java 17 |
-| `sanctionmanager-velocity` | Velocity                 | Java 25 |
+## Command System
 
-The Java version listed above is the version used to build the corresponding module. Your Minecraft server must also satisfy the Java requirements of the specific server software and Minecraft version you are running.
+Commands belong to the Minecraft adapter layer, not the core business layer.
+
+```text
+Minecraft / Proxy Command Input
+            │
+            ▼
+Cloud CommandManager (platform-specific)
+            │
+            ▼
+SanctionCommand (sanctionmanager-minecraft)
+            │
+            ▼
+MinecraftSanctionManager → PunishmentManagerAPI
+            │
+            ▼
+Core → PunishmentService → Repository / Cache
+```
+
+Each platform adapter provides:
+
+* A `CommandManager<SanctionCommandSender>` instance (Cloud Paper, Cloud Bungee, or Cloud Velocity)
+* A `SanctionCommandSender` implementation that wraps the platform's `CommandSource`
+
+The command logic itself lives in `SanctionCommand` within `sanctionmanager-minecraft`.
+
+## Modules
+
+| Module | Purpose | Java |
+| ------ | ------- | ---- |
+| `sanctionmanager-api` | Platform-independent public API and contracts | 8 |
+| `sanctionmanager-core` | Standalone sanction management core | 8 |
+| `sanctionmanager-minecraft` | Minecraft adapter layer (commands, messages, Cloud) | 8 |
+| `sanctionmanager-spigot` | Spigot/Bukkit platform adapter | 8 |
+| `sanctionmanager-bungee` | BungeeCord platform adapter | 17 |
+| `sanctionmanager-velocity` | Velocity platform adapter | 25 |
+
+## Supported Platforms
+
+| Platform | Mode | Description |
+| -------- | ---- | ----------- |
+| Spigot | Standalone / Bridge | Full sanction management or bridge to another instance |
+| BungeeCord | Standalone / Listener | Proxy-level sanction management |
+| Velocity | Standalone / Listener | Proxy-level sanction management |
+
+These are integration adapters, not the runtime environment of the core itself. The core can function as a standalone library without any Minecraft platform.
+
+## Configuration
+
+Each platform adapter ships a `config.yml`:
+
+```yaml
+mode: standalone
+
+redis:
+  enable: false
+  host: localhost
+  port: 6379
+  password: ""
+
+database:
+  driver: com.mysql.cj.jdbc.Driver
+  host: localhost
+  port: 3306
+  database: sanctionmanager
+  user: root
+  password: ""
+```
+
+### Mode
+
+* `standalone` — the adapter runs its own `SanctionManagerCore` instance with local database and cache
+* `bridge` (Spigot) — delegates to an external SanctionManager instance; no local features
+* `listener` (BungeeCord/Velocity) — proxy listens for cross-proxy events; no local commands
+
+### Database
+
+Supported drivers:
+
+* `com.mysql.cj.jdbc.Driver` — MySQL
+* `org.mariadb.jdbc.Driver` — MariaDB
+* `org.postgresql.Driver` — PostgreSQL
+* `org.sqlite.JDBC` — SQLite
+
+### Messages
+
+Message templates are loaded from `messages.yml` and support the following variables:
+
+| Variable | Description |
+| -------- | ----------- |
+| `%name%` | Punished player name |
+| `%uuid%` | Punished player UUID |
+| `%reason%` | Punishment reason |
+| `%id%` | Punishment ID |
+| `%operator%` | Operator who issued the punishment |
+| `%duration%` | Remaining duration (or `permanent`) |
+| `%time%` | Expiry timestamp (or `permanent`) |
+| `%plugin%` | Plugin name |
+| `%version%` | Plugin version |
+
+## API / Integration
+
+The `sanctionmanager-api` module provides the public interface for integrating with SanctionManager from external code.
+
+### Accessing the API
+
+```java
+SanctionManager api = SanctionManagerAPI.getAPI();
+PunishmentManagerAPI punishManager = api.getPunishManager();
+```
+
+### Querying punishments
+
+```java
+Collection<Punishment> active = punishManager.queryActivePunishments(playerUuid);
+```
+
+### Adding a punishment
+
+```java
+punishManager.addPunishment(punishmentRecord);
+```
+
+### Listening to events
+
+```java
+SanctionEventBus.setHandler(event -> {
+    if (event instanceof PunishmentExecuteEvent) {
+        Punishment punishment = ((PunishmentExecuteEvent) event).punishment;
+    }
+});
+```
+
+Events support cancellation: setting `event.canceled = true` prevents the action from proceeding.
+
+### Integration beyond Minecraft
+
+The platform-independent API is designed to allow integrations beyond Minecraft. Because core has no Minecraft dependency, it can be embedded in any Java 8+ application — web services, Discord bots, administration panels, or custom server software — that needs sanction management logic with persistent storage.
+
+## Network Architecture
+
+In a multi-server Minecraft network, SanctionManager can share sanction data across servers and proxies:
+
+```text
+                ┌───────────┐
+                │   Redis   │
+                │  Cache    │
+                └─────┬─────┘
+                      │
+       ┌──────────────┼──────────────┐
+       │              │              │
+       ▼              ▼              ▼
+┌──────────┐   ┌──────────┐   ┌──────────┐
+│  Spigot  │   │  Spigot  │   │ Velocity │
+│ Server 1 │   │ Server 2 │   │  Proxy   │
+└──────────┘   └──────────┘   └──────────┘
+```
+
+Each node runs its own `SanctionManagerCore` instance backed by the same database. Redis provides a distributed cache layer for cross-node data consistency.
 
 ## Requirements
 
 ### Build
 
-* JDK 25
-* Gradle Wrapper
+* JDK 25 (for the root build configuration and Velocity module)
+* Gradle Wrapper (included)
 
-The root project uses Java 25 for the build configuration, while the API and core modules target Java 8 bytecode.
+### Runtime
 
-### Runtime dependencies
-
-Depending on the platform and deployment, SanctionManager uses:
-
-* Redis / Jedis
-* HikariCP
-* Cloud
-* StandaloneEvent
-* ServerBridge
-
-The API and core modules declare ServerBridge and StandaloneEvent as compile-time dependencies. Core additionally uses Jedis, HikariCP, and Cloud.
+| Module | Minimum Java |
+| ------ | ------------ |
+| API / Core / Minecraft / Spigot | Java 8 |
+| BungeeCord | Java 17 |
+| Velocity | Java 21 |
 
 ## Building
 
@@ -109,7 +312,7 @@ git clone https://github.com/FloatingPointMC/SanctionManager.git
 cd SanctionManager
 ```
 
-Build the project using the Gradle Wrapper:
+Build all modules:
 
 ```bash
 ./gradlew build
@@ -121,177 +324,13 @@ On Windows:
 gradlew.bat build
 ```
 
-The platform modules use Shadow to produce their distributable JARs. Runtime dependencies such as Jedis, HikariCP, and bStats are relocated into SanctionManager's own namespace to reduce dependency conflicts with other plugins.
-
-## Installation
-
-### Spigot
-
-Build:
-
-```bash
-./gradlew :sanctionmanager-spigot:build
-```
-
-Place the resulting JAR in the server's:
-
-```text
-plugins/
-```
-
-directory.
-
-The Spigot module registers itself as `SanctionManager` and uses:
-
-```text
-io.github.floatingpointmc.sanctionmanager.spigot.SpigotMain
-```
-
-as its entry point.
-
-### BungeeCord
-
-Build:
-
-```bash
-./gradlew :sanctionmanager-bungee:build
-```
-
-Place the resulting JAR in the proxy's:
-
-```text
-plugins/
-```
-
-directory.
-
-The BungeeCord module uses:
-
-```text
-io.github.floatingpointmc.sanctionmanager.bungee.BungeeMain
-```
-
-as its entry point.
-
-### Velocity
-
-Build:
-
-```bash
-./gradlew :sanctionmanager-velocity:build
-```
-
-Place the resulting JAR in Velocity's:
-
-```text
-plugins/
-```
-
-directory.
-
-The Velocity module uses:
-
-```text
-io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain
-```
-
-as its entry point.
-
-Velocity currently declares StandaloneEvent as a required dependency and ServerBridge as an optional dependency.
-
-## Dependencies
-
-SanctionManager is built around several existing open-source libraries and platform APIs.
-
-### Core
-
-The core module currently uses:
-
-* [Jedis](https://github.com/redis/jedis) — Redis client
-* [HikariCP](https://github.com/brettwooldridge/HikariCP) — JDBC connection pooling
-* [Cloud](https://github.com/Incendo/cloud) — command framework
-* ServerBridge API
-* StandaloneEvent API
-* JetBrains Annotations
-* Lombok
-
-### Spigot
-
-The Spigot adapter additionally uses:
-
-* Spigot API 1.8.8
-* bStats
-* Cloud Paper
-
-### BungeeCord
-
-The BungeeCord adapter additionally uses:
-
-* BungeeCord API
-* bStats
-* Cloud Bungee
-
-### Velocity
-
-The Velocity adapter additionally uses:
-
-* Velocity API 4.2.0
-* bStats
-* Cloud Velocity
-* SnakeYAML
-
-## API
-
-The `sanctionmanager-api` module contains the public interfaces and types intended for integration with other plugins.
-
-If you are developing another plugin that needs to interact with SanctionManager, depend on the API rather than directly depending on the platform implementation.
-
-This allows integrations to remain independent from the platform-specific implementation.
-
-## Network Architecture
-
-SanctionManager is intended to be used in Minecraft server networks where multiple servers and/or proxies need access to shared sanction data.
-
-A typical deployment can look like:
-
-```text
-                    ┌───────────────┐
-                    │    Redis      │
-                    │ Shared State  │
-                    └───────┬───────┘
-                            │
-             ┌──────────────┼──────────────┐
-             │              │              │
-             ▼              ▼              ▼
-       ┌──────────┐   ┌──────────┐   ┌──────────┐
-       │ Spigot   │   │ Spigot   │   │ Velocity │
-       │ Server 1 │   │ Server 2 │   │ / Proxy  │
-       └──────────┘   └──────────┘   └──────────┘
-```
-
-This allows the common SanctionManager logic to be shared while platform-specific integrations remain isolated.
-
-## Development
-
-The project is a Kotlin DSL-based Gradle multi-project build.
-
-Included modules:
-
-```text
-sanctionmanager-api
-sanctionmanager-core
-sanctionmanager-spigot
-sanctionmanager-bungee
-sanctionmanager-velocity
-```
-
-To run the test suite:
+Run tests:
 
 ```bash
 ./gradlew test
 ```
 
-To build a specific platform:
+Build a specific platform adapter:
 
 ```bash
 ./gradlew :sanctionmanager-spigot:build
@@ -299,42 +338,119 @@ To build a specific platform:
 ./gradlew :sanctionmanager-velocity:build
 ```
 
+Platform adapters use the Shadow plugin to produce self-contained JARs. Runtime dependencies (Jedis, HikariCP, bStats) are relocated into SanctionManager's namespace to avoid conflicts with other plugins.
+
+## Installation
+
+### Spigot
+
+1. Build: `./gradlew :sanctionmanager-spigot:build`
+2. Place the JAR in the server's `plugins/` directory
+3. Configure `config.yml` and `messages.yml` in `plugins/SanctionManager/`
+4. Restart the server
+
+Entry point: `io.github.floatingpointmc.sanctionmanager.spigot.SpigotMain`
+
+### BungeeCord
+
+1. Build: `./gradlew :sanctionmanager-bungee:build`
+2. Place the JAR in the proxy's `plugins/` directory
+3. Configure `config.yml` in `plugins/SanctionManager/`
+4. Restart the proxy
+
+Entry point: `io.github.floatingpointmc.sanctionmanager.bungee.BungeeMain`
+
+### Velocity
+
+1. Build: `./gradlew :sanctionmanager-velocity:build`
+2. Place the JAR in Velocity's `plugins/` directory
+3. Configure `config.yml` in the plugin's data directory
+4. Restart the proxy
+
+Entry point: `io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain`
+
+## Dependencies
+
+### Core
+
+* [Jedis](https://github.com/redis/jedis) 8.0.1 — Redis client for distributed caching
+* [HikariCP](https://github.com/brettwooldridge/HikariCP) 4.0.3 — JDBC connection pooling
+* JetBrains Annotations 26.1.0
+* Lombok 1.18.48
+
+### Minecraft Adapter
+
+* [Cloud Core](https://github.com/Incendo/cloud) 2.0.0 — command framework
+* JetBrains Annotations, Lombok
+
+### Spigot
+
+* Spigot API 1.8.8-R0.1-SNAPSHOT
+* [Cloud Paper](https://github.com/Incendo/cloud) 2.0.0-beta.10
+* [bStats Bukkit](https://bstats.org) 3.2.1
+
+### BungeeCord
+
+* BungeeCord API 26.1-R0.1-SNAPSHOT
+* [Cloud Bungee](https://github.com/Incendo/cloud) 2.0.0-beta.10
+* [bStats BungeeCord](https://bstats.org) 3.2.1
+
+### Velocity
+
+* Velocity API 4.2.0
+* [Cloud Velocity](https://github.com/Incendo/cloud) 2.0.0-beta.10
+* [bStats Velocity](https://bstats.org) 3.2.1
+* SnakeYAML 2.4
+
+## Development
+
+This is a Kotlin DSL Gradle multi-project build with six modules:
+
+```text
+sanctionmanager-api
+sanctionmanager-core
+sanctionmanager-minecraft
+sanctionmanager-spigot
+sanctionmanager-bungee
+sanctionmanager-velocity
+```
+
+### Key design principles
+
+* Core is platform-independent — no Minecraft types in `sanctionmanager-core`
+* Platform adapters access core only through `sanctionmanager-minecraft`
+* Cloud commands live in `sanctionmanager-minecraft`, not in platform adapters or core
+* Message formatting is in `sanctionmanager-minecraft`; message delivery is in platform adapters
+* API does not expose platform-specific types
+* New features that are platform-independent go in core; Minecraft-specific behavior goes in the minecraft adapter or platform adapters
+
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome. Before submitting a pull request:
 
-Before submitting a pull request:
+1. Ensure the project builds: `./gradlew build`
+2. Run the test suite: `./gradlew test`
+3. Keep core platform-independent — no Minecraft imports in `sanctionmanager-core`
+4. Platform adapters must not depend on `sanctionmanager-core` directly; use `sanctionmanager-minecraft`
+5. Put platform-independent functionality in `sanctionmanager-core`
+6. Put public integration interfaces in `sanctionmanager-api`
+7. Put Minecraft-facing logic (commands, messages) in `sanctionmanager-minecraft`
+8. Document significant API or behavioral changes
 
-1. Make sure the project builds successfully.
-2. Run the relevant test suite.
-3. Keep platform-specific code inside its corresponding module.
-4. Put platform-independent functionality in `sanctionmanager-core`.
-5. Put public integration interfaces in `sanctionmanager-api`.
-6. Avoid introducing unnecessary platform-specific dependencies into shared modules.
-7. Document significant API or behavioral changes.
-
-For larger changes, opening an issue before implementation is recommended so the proposed design can be discussed first.
+For larger changes, open an issue before implementation so the design can be discussed.
 
 ## License
 
-SanctionManager is free and open-source software.
+SanctionManager is licensed under the [GNU Lesser General Public License v3.0 or later](LICENSE).
 
-Copyright © 2026 vlouboos and contributors.
-
-See [LICENSE](LICENSE) for the complete license text.
+Copyright &copy; 2026 vlouboos and contributors.
 
 ### Third-party software
 
-SanctionManager uses a number of third-party libraries. Each dependency remains subject to its own license.
-
-See the corresponding project and dependency metadata for the applicable licenses.
+SanctionManager uses third-party libraries, each subject to its own license. See dependency metadata for details.
 
 ## Authors
 
-**vlouboos**
+**vlouboos** — [GitHub](https://github.com/vlouboos)
 
-GitHub: https://github.com/vlouboos
-
-Repository:
-
-https://github.com/FloatingPointMC/SanctionManager
+Repository: [https://github.com/FloatingPointMC/SanctionManager](https://github.com/FloatingPointMC/SanctionManager)
