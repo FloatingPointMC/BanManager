@@ -35,9 +35,9 @@ dependencies {
 tasks.shadowJar {
     archiveClassifier.set("")
     mergeServiceFiles()
-    relocate("redis.clients.jedis", "io.github.floatingpointmc.banmanager.libs.jedis")
-    relocate("com.zaxxer.hikari", "io.github.floatingpointmc.banmanager.libs.hikari")
-    relocate("org.bstats", "io.github.floatingpointmc.banmanager.libs.bstats")
+    relocate("redis.clients.jedis", "io.github.floatingpointmc.sanctionmanager.libs.jedis")
+    relocate("com.zaxxer.hikari", "io.github.floatingpointmc.sanctionmanager.libs.hikari")
+    relocate("org.bstats", "io.github.floatingpointmc.sanctionmanager.libs.bstats")
     minimize()
 }
 

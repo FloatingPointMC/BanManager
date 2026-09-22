@@ -39,10 +39,10 @@ tasks.processResources {
 tasks.shadowJar {
     archiveClassifier.set("")
     mergeServiceFiles()
-    relocate("redis.clients.jedis", "io.github.floatingpointmc.banmanager.libs.jedis")
-    relocate("com.zaxxer.hikari", "io.github.floatingpointmc.banmanager.libs.hikari")
-    relocate("org.bstats", "io.github.floatingpointmc.banmanager.libs.bstats")
-    relocate("org.yaml.snakeyaml", "io.github.floatingpointmc.banmanager.libs.snakeyaml")
+    relocate("redis.clients.jedis", "io.github.floatingpointmc.sanctionmanager.libs.jedis")
+    relocate("com.zaxxer.hikari", "io.github.floatingpointmc.sanctionmanager.libs.hikari")
+    relocate("org.bstats", "io.github.floatingpointmc.sanctionmanager.libs.bstats")
+    relocate("org.yaml.snakeyaml", "io.github.floatingpointmc.sanctionmanager.libs.snakeyaml")
     minimize()
 }
 

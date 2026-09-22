@@ -1,10 +1,10 @@
 package io.github.floatingpointmc.sanctionmanager.spigot.bridge;
 
-import io.github.floatingpointmc.sanctionmanager.api.BanManager;
+import io.github.floatingpointmc.sanctionmanager.api.SanctionManager;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import org.jetbrains.annotations.NotNull;
 
-public class BanManagerBridge implements BanManager {
+public class SanctionManagerBridge implements SanctionManager {
     @Override
     public @NotNull PunishmentManagerAPI getPunishManager() {
         throw new UnsupportedOperationException("Operation is not supported under bridge mode.");

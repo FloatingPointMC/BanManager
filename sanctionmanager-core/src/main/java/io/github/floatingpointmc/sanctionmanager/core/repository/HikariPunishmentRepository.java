@@ -65,7 +65,7 @@ public class HikariPunishmentRepository implements PunishmentRepository, AutoClo
         hikariConfig.setPassword(config.getPassword());
         hikariConfig.setMaximumPoolSize(10);
         hikariConfig.setMinimumIdle(2);
-        hikariConfig.setPoolName("BanManager-HikariPool");
+        hikariConfig.setPoolName("SanctionManager-HikariPool");
         this.dataSource = new HikariDataSource(hikariConfig);
         initTable();
     }

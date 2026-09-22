@@ -1,13 +1,13 @@
 package io.github.floatingpointmc.sanctionmanager.spigot;
 
-import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
-import io.github.floatingpointmc.sanctionmanager.core.BanManagerCore;
+import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.core.SanctionManagerCore;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.spigot.bridge.BanManagerBridge;
+import io.github.floatingpointmc.sanctionmanager.spigot.bridge.SanctionManagerBridge;
 import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotCommandSender;
 import io.github.floatingpointmc.sanctionmanager.spigot.listener.PlayerListener;
 import org.bstats.bukkit.Metrics;
@@ -25,7 +25,7 @@ import java.util.ArrayList;
 
 public class SpigotMain extends JavaPlugin {
     private static final int PLUGIN_ID = 34182;
-    private BanManagerCore core;
+    private SanctionManagerCore core;
 
     @Override
     public void onEnable() {
@@ -40,7 +40,7 @@ public class SpigotMain extends JavaPlugin {
                     .pluginName(getDescription().getName())
                     .pluginVersion(getDescription().getVersion())
                     .build();
-            core = new BanManagerCore(databaseConfig);
+            core = new SanctionManagerCore(databaseConfig);
             new SanctionCommand(new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(), new SenderMapper<CommandSender, SanctionCommandSender>() {
                 @Override
                 public @NotNull SanctionCommandSender map(@NotNull CommandSender base) {
@@ -53,11 +53,11 @@ public class SpigotMain extends JavaPlugin {
                 }
             }), messageConfig, contextTemplate);
             getServer().getPluginManager().registerEvents(
-                    new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
-            getLogger().info("BanManager is running in standalone mode.");
+                    new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
+            getLogger().info("SanctionManager is running in standalone mode.");
         } else {
-            getLogger().warning("BanManager is running under bridge mode, no features available.");
-            BanManagerAPI.register(new BanManagerBridge());
+            getLogger().warning("SanctionManager is running under bridge mode, no features available.");
+            SanctionManagerAPI.register(new SanctionManagerBridge());
         }
     }
 
@@ -74,7 +74,7 @@ public class SpigotMain extends JavaPlugin {
                 .driver(config.getString("database.driver", "com.mysql.cj.jdbc.Driver"))
                 .host(config.getString("database.host", "localhost"))
                 .port(config.getInt("database.port", 3306))
-                .database(config.getString("database.database", "banmanager"))
+                .database(config.getString("database.database", "sanctionmanager"))
                 .user(config.getString("database.user", "root"))
                 .password(config.getString("database.password", ""))
                 .build();

@@ -1,7 +1,7 @@
 package io.github.floatingpointmc.sanctionmanager.core;
 
-import io.github.floatingpointmc.sanctionmanager.api.BanManager;
-import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.api.SanctionManager;
+import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.core.cache.LocalPunishmentCache;
 import io.github.floatingpointmc.sanctionmanager.core.cache.PunishmentCache;
@@ -12,19 +12,19 @@ import io.github.floatingpointmc.sanctionmanager.core.repository.PunishmentRepos
 import io.github.floatingpointmc.sanctionmanager.core.service.PunishmentService;
 import org.jetbrains.annotations.NotNull;
 
-public class BanManagerCore implements BanManager {
+public class SanctionManagerCore implements SanctionManager {
     private final @NotNull PunishmentManager punishmentManager;
     private final @NotNull PunishmentRepository repository;
 
-    public BanManagerCore(@NotNull DatabaseConfig databaseConfig) {
+    public SanctionManagerCore(@NotNull DatabaseConfig databaseConfig) {
         this(new LocalPunishmentCache(), new HikariPunishmentRepository(databaseConfig));
     }
 
-    public BanManagerCore(@NotNull PunishmentCache cache, @NotNull PunishmentRepository repository) {
+    public SanctionManagerCore(@NotNull PunishmentCache cache, @NotNull PunishmentRepository repository) {
         this.repository = repository;
         PunishmentService service = new PunishmentService(cache, repository);
         this.punishmentManager = new PunishmentManager(service);
-        BanManagerAPI.register(this);
+        SanctionManagerAPI.register(this);
     }
 
     @Override

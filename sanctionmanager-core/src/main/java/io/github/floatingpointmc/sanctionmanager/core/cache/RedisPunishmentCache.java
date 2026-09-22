@@ -74,10 +74,10 @@ public class RedisPunishmentCache implements PunishmentCache {
     }
 
     private static String keyById(int id) {
-        return "banmanager:punishment:id:" + id;
+        return "sanctionmanager:punishment:id:" + id;
     }
 
     private static String keyByTarget(UUID target) {
-        return "banmanager:punishment:target:" + target;
+        return "sanctionmanager:punishment:target:" + target;
     }
 }

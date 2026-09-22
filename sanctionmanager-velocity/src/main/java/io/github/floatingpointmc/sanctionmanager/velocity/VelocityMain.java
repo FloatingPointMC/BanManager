@@ -8,8 +8,8 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
-import io.github.floatingpointmc.sanctionmanager.core.BanManagerCore;
+import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.core.SanctionManagerCore;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
@@ -35,7 +35,7 @@ public class VelocityMain {
     private final Path dataDirectory;
     private final PluginContainer pluginContainer;
     private final Metrics.Factory metricsFactory;
-    private BanManagerCore core;
+    private SanctionManagerCore core;
 
     @Inject
     public VelocityMain(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory, PluginContainer pluginContainer, Metrics.Factory metricsFactory) {
@@ -62,13 +62,13 @@ public class VelocityMain {
 
         if ("standalone".equalsIgnoreCase(mode)) {
             DatabaseConfig databaseConfig = loadDatabaseConfig(config);
-            core = new BanManagerCore(databaseConfig);
+            core = new SanctionManagerCore(databaseConfig);
 
             new SanctionCommand(new VelocityCommandManager<>(
                     pluginContainer,
                     proxy,
                     ExecutionCoordinator.asyncCoordinator(),
-                    new SenderMapper<CommandSource, SanctionCommandSender>() {
+                    new SenderMapper<>() {
                         @Override
                         public @NonNull SanctionCommandSender map(@NonNull CommandSource base) {
                             return new VelocityCommandSender(base);
@@ -82,7 +82,7 @@ public class VelocityMain {
             ), messageConfig, contextTemplate).buildCommands();
 
             proxy.getEventManager().register(this, new PlayerListener(
-                    BanManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
+                    SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
 
             logger.info("SanctionManager is running in standalone mode.");
         } else {
@@ -103,7 +103,7 @@ public class VelocityMain {
                 .driver(config.getString("database.driver", "com.mysql.cj.jdbc.Driver"))
                 .host(config.getString("database.host", "localhost"))
                 .port(config.getInt("database.port", 3306))
-                .database(config.getString("database.database", "banmanager"))
+                .database(config.getString("database.database", "sanctionmanager"))
                 .user(config.getString("database.user", "root"))
                 .password(config.getString("database.password", ""))
                 .build();

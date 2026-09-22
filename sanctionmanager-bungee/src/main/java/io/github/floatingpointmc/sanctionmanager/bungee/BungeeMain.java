@@ -1,10 +1,10 @@
 package io.github.floatingpointmc.sanctionmanager.bungee;
 
-import io.github.floatingpointmc.sanctionmanager.api.BanManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.bungee.command.BungeeCommandSender;
 import io.github.floatingpointmc.sanctionmanager.bungee.config.Config;
 import io.github.floatingpointmc.sanctionmanager.bungee.listener.PlayerListener;
-import io.github.floatingpointmc.sanctionmanager.core.BanManagerCore;
+import io.github.floatingpointmc.sanctionmanager.core.SanctionManagerCore;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommand;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
@@ -25,7 +25,7 @@ import java.util.ArrayList;
 public class BungeeMain extends Plugin {
     private static final int PLUGIN_ID = 34183;
     private Config config;
-    private BanManagerCore core;
+    private SanctionManagerCore core;
 
     @Override
     public void onLoad() {
@@ -60,10 +60,10 @@ public class BungeeMain extends Plugin {
                     }), messageConfig, contextTemplate).buildCommands();
         }
         DatabaseConfig databaseConfig = loadDatabaseConfig(config);
-        core = new BanManagerCore(databaseConfig);
+        core = new SanctionManagerCore(databaseConfig);
         getProxy().getPluginManager().registerListener(this,
-                new PlayerListener(BanManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
-        getLogger().info("BanManager is running in standalone mode.");
+                new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
+        getLogger().info("SanctionManager is running in standalone mode.");
     }
 
     @Override
@@ -79,7 +79,7 @@ public class BungeeMain extends Plugin {
                 .driver(config.getString("database.driver", "com.mysql.cj.jdbc.Driver"))
                 .host(config.getString("database.host", "localhost"))
                 .port(config.getInt("database.port", 3306))
-                .database(config.getString("database.database", "banmanager"))
+                .database(config.getString("database.database", "sanctionmanager"))
                 .user(config.getString("database.user", "root"))
                 .password(config.getString("database.password", ""))
                 .build();
