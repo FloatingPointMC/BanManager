@@ -1,15 +1,21 @@
 {
-  "name": "sanctionmanager",
+  "id": "sanctionmanager",
+  "name": "SanctionManager",
   "version": "${projectVersion}",
   "description": "Velocity plugin for SanctionManager",
   "author": "vlouboos",
   "email": "vlouboos@vlouboos.com",
   "website": "https://vlouboos.com",
   "license": "MIT",
+  "main": "io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain",
   "dependencies": [
-    "standaloneevent"
-  ],
-  "softDependencies": [
-    "serverbridge"
+    {
+      "id": "standaloneevent",
+      "optional": false
+    },
+    {
+      "id": "serverbridge",
+      "optional": true
+    }
   ]
 }

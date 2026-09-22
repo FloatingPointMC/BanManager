@@ -1,4 +1,4 @@
-package io.github.floatingpointmc.sanctionmanage.velocity.command;
+package io.github.floatingpointmc.sanctionmanager.velocity.command;
 
 import com.velocitypowered.api.command.CommandSource;
 import io.github.floatingpointmc.sanctionmanager.core.command.SanctionCommandSender;

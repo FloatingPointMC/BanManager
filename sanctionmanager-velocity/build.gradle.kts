@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "io.github.floatingpointmc"
@@ -10,6 +11,7 @@ java {
         languageVersion = JavaLanguageVersion.of(25)
     }
 }
+
 repositories {
     mavenCentral()
     maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
@@ -25,6 +27,27 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.48")
     implementation("org.bstats:bstats-velocity:3.2.1")
     implementation("org.incendo:cloud-velocity:2.0.0-beta.10")
+    implementation("org.yaml:snakeyaml:2.4")
+}
+
+tasks.processResources {
+    filesMatching("velocity-plugin.json") {
+        expand("projectVersion" to project.version)
+    }
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+    mergeServiceFiles()
+    relocate("redis.clients.jedis", "io.github.floatingpointmc.banmanager.libs.jedis")
+    relocate("com.zaxxer.hikari", "io.github.floatingpointmc.banmanager.libs.hikari")
+    relocate("org.bstats", "io.github.floatingpointmc.banmanager.libs.bstats")
+    relocate("org.yaml.snakeyaml", "io.github.floatingpointmc.banmanager.libs.snakeyaml")
+    minimize()
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }
 
 tasks.test {
