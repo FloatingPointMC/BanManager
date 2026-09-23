@@ -1,5 +1,5 @@
 plugins {
-    id("java")
+    id("java-library")
     id("idea")
 }
 
@@ -17,6 +17,7 @@ repositories {
 }
 
 dependencies {
+    api("io.github.vlouboos:standaloneevent-common:1.6")
     compileOnly("org.jetbrains:annotations:26.1.0")
     annotationProcessor("org.jetbrains:annotations:26.1.0")
     compileOnly("org.projectlombok:lombok:1.18.48")

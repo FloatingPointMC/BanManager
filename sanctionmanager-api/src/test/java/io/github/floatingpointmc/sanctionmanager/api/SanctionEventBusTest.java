@@ -1,9 +1,11 @@
 package io.github.floatingpointmc.sanctionmanager.api;
 
 import io.github.floatingpointmc.sanctionmanager.api.events.PunishmentRemoveEvent;
-import io.github.floatingpointmc.sanctionmanager.api.events.SanctionEventBus;
-import io.github.floatingpointmc.sanctionmanager.api.events.SanctionEvent;
+import io.github.vlouboos.standaloneevent.api.ApiProvider;
+import io.github.vlouboos.standaloneevent.api.EventHandler;
+import io.github.vlouboos.standaloneevent.api.StandaloneEventAPI;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,52 +15,99 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SanctionEventBusTest {
 
+    @BeforeEach
+    void setUp() {
+        ApiProvider.injectApi(false);
+    }
+
     @AfterEach
     void tearDown() {
-        SanctionEventBus.setHandler(event -> {});
     }
 
     @Test
-    void testDefaultHandlerDoesNothing() {
-        SanctionEventBus.setHandler(event -> {});
+    void testCallWithNoListenersDoesNotThrow() {
         PunishmentRemoveEvent event = new PunishmentRemoveEvent(1);
-        assertDoesNotThrow(() -> SanctionEventBus.call(event));
+        assertDoesNotThrow(() -> StandaloneEventAPI.getApi().call(event));
     }
 
     @Test
-    void testCustomHandlerReceivesEvent() {
-        AtomicReference<SanctionEvent> received = new AtomicReference<>();
-        SanctionEventBus.setHandler(received::set);
+    void testListenerReceivesEvent() {
+        AtomicReference<PunishmentRemoveEvent> received = new AtomicReference<>();
+        ReceiveListener listener = new ReceiveListener(received);
+        StandaloneEventAPI.getApi().register(listener);
 
         PunishmentRemoveEvent event = new PunishmentRemoveEvent(42);
-        SanctionEventBus.call(event);
+        StandaloneEventAPI.getApi().call(event);
 
         assertNotNull(received.get());
-        assertInstanceOf(PunishmentRemoveEvent.class, received.get());
-        assertEquals(42, ((PunishmentRemoveEvent) received.get()).id);
+        assertEquals(42, received.get().id);
+
+        StandaloneEventAPI.getApi().unregister(listener);
     }
 
     @Test
     void testEventCancellation() {
-        SanctionEventBus.setHandler(event -> event.canceled = true);
+        CancelListener listener = new CancelListener();
+        StandaloneEventAPI.getApi().register(listener);
 
         PunishmentRemoveEvent event = new PunishmentRemoveEvent(99);
-        SanctionEventBus.call(event);
+        StandaloneEventAPI.getApi().call(event);
 
         assertTrue(event.canceled);
+
+        StandaloneEventAPI.getApi().unregister(listener);
     }
 
     @Test
-    void testHandlerSwap() {
+    void testListenerSwap() {
         AtomicBoolean first = new AtomicBoolean(false);
         AtomicBoolean second = new AtomicBoolean(false);
 
-        SanctionEventBus.setHandler(event -> first.set(true));
-        SanctionEventBus.call(new PunishmentRemoveEvent(1));
+        FlagListener firstListener = new FlagListener(first);
+        StandaloneEventAPI.getApi().register(firstListener);
+        StandaloneEventAPI.getApi().call(new PunishmentRemoveEvent(1));
         assertTrue(first.get());
 
-        SanctionEventBus.setHandler(event -> second.set(true));
-        SanctionEventBus.call(new PunishmentRemoveEvent(2));
+        StandaloneEventAPI.getApi().unregister(firstListener);
+
+        FlagListener secondListener = new FlagListener(second);
+        StandaloneEventAPI.getApi().register(secondListener);
+        StandaloneEventAPI.getApi().call(new PunishmentRemoveEvent(2));
         assertTrue(second.get());
+
+        StandaloneEventAPI.getApi().unregister(secondListener);
+    }
+
+    public static class ReceiveListener {
+        private final AtomicReference<PunishmentRemoveEvent> ref;
+
+        public ReceiveListener(AtomicReference<PunishmentRemoveEvent> ref) {
+            this.ref = ref;
+        }
+
+        @EventHandler
+        public void onPunishmentRemove(PunishmentRemoveEvent event) {
+            ref.set(event);
+        }
+    }
+
+    public static class CancelListener {
+        @EventHandler
+        public void onCancel(PunishmentRemoveEvent event) {
+            event.canceled = true;
+        }
+    }
+
+    public static class FlagListener {
+        private final AtomicBoolean flag;
+
+        public FlagListener(AtomicBoolean flag) {
+            this.flag = flag;
+        }
+
+        @EventHandler
+        public void onEvent(PunishmentRemoveEvent event) {
+            flag.set(true);
+        }
     }
 }

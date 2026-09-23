@@ -66,7 +66,7 @@ Platform adapters never depend on core directly. They interact with core exclusi
 * `PunishmentSerializer` — serialization for Redis storage
 * `PunishmentRecord` — domain model implementing the `Punishment` interface
 * `DatabaseConfig` — database connection configuration (driver, host, port, database, credentials)
-* `SanctionEventBus` — platform-independent event dispatch
+* StandaloneEvent (`io.github.vlouboos:standaloneevent-common`) — platform-independent event dispatch
 
 Core never references `Player`, `CommandSender`, `Bukkit`, `Component`, `Cloud`, or any Minecraft-specific type.
 
@@ -79,8 +79,7 @@ Core never references `Player`, `CommandSender`, `Bukkit`, `Component`, `Cloud`,
 * `PunishmentManagerAPI` — query, add, withdraw, and remove punishments
 * `Punishment` — read-only interface for punishment data (target, executor, type, times, reason, etc.)
 * `Type` — enum: `BAN`, `MUTE`
-* `SanctionEvent` — base event with cancellation support
-* `PunishmentExecuteEvent`, `PunishmentWithdrawEvent`, `PunishmentRemoveEvent` — domain events
+* `PunishmentExecuteEvent`, `PunishmentWithdrawEvent`, `PunishmentRemoveEvent` — domain events (extend `Event` from StandaloneEvent, with cancellation support)
 
 ### Minecraft Adapter
 
@@ -253,12 +252,17 @@ punishManager.addPunishment(punishmentRecord);
 
 ### Listening to events
 
+SanctionManager uses [StandaloneEvent](https://github.com/MC-Azure/StandaloneEvent) (`io.github.vlouboos:standaloneevent-common`) as its event system. Register a listener object with `@EventHandler`-annotated methods:
+
 ```java
-SanctionEventBus.setHandler(event -> {
-    if (event instanceof PunishmentExecuteEvent) {
-        Punishment punishment = ((PunishmentExecuteEvent) event).punishment;
+public class MyListener {
+    @EventHandler
+    public void onPunishmentExecute(PunishmentExecuteEvent event) {
+        Punishment punishment = event.punishment;
     }
-});
+}
+
+StandaloneEventAPI.getApi().register(new MyListener());
 ```
 
 Events support cancellation: setting `event.canceled = true` prevents the action from proceeding.
@@ -373,6 +377,7 @@ Entry point: `io.github.floatingpointmc.sanctionmanager.velocity.VelocityMain`
 
 ### Core
 
+* [StandaloneEvent Common](https://github.com/MC-Azure/StandaloneEvent) 1.6 — platform-independent event system
 * [Jedis](https://github.com/redis/jedis) 8.0.1 — Redis client for distributed caching
 * [HikariCP](https://github.com/brettwooldridge/HikariCP) 4.0.3 — JDBC connection pooling
 * JetBrains Annotations 26.1.0

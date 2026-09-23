@@ -10,6 +10,7 @@ import io.github.floatingpointmc.sanctionmanager.core.management.PunishmentManag
 import io.github.floatingpointmc.sanctionmanager.core.repository.HikariPunishmentRepository;
 import io.github.floatingpointmc.sanctionmanager.core.repository.PunishmentRepository;
 import io.github.floatingpointmc.sanctionmanager.core.service.PunishmentService;
+import io.github.vlouboos.standaloneevent.api.ApiProvider;
 import org.jetbrains.annotations.NotNull;
 
 public class SanctionManagerCore implements SanctionManager {
@@ -21,6 +22,7 @@ public class SanctionManagerCore implements SanctionManager {
     }
 
     public SanctionManagerCore(@NotNull PunishmentCache cache, @NotNull PunishmentRepository repository) {
+        ApiProvider.injectApi(false);
         this.repository = repository;
         PunishmentService service = new PunishmentService(cache, repository);
         this.punishmentManager = new PunishmentManager(service);

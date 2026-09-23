@@ -1,12 +1,16 @@
 package io.github.floatingpointmc.sanctionmanager.core;
 
 import io.github.floatingpointmc.sanctionmanager.api.events.PunishmentExecuteEvent;
-import io.github.floatingpointmc.sanctionmanager.api.events.SanctionEventBus;
+import io.github.floatingpointmc.sanctionmanager.api.events.PunishmentRemoveEvent;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
 import io.github.floatingpointmc.sanctionmanager.core.cache.LocalPunishmentCache;
 import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.model.PunishmentRecord;
+import io.github.vlouboos.standaloneevent.api.ApiProvider;
+import io.github.vlouboos.standaloneevent.api.EventHandler;
+import io.github.vlouboos.standaloneevent.api.StandaloneEventAPI;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,17 +27,19 @@ public class SanctionManagerCoreTest {
 
     @BeforeEach
     void setUp() {
+        ApiProvider.injectApi(false);
         cache = new LocalPunishmentCache();
+    }
+
+    @AfterEach
+    void tearDown() {
     }
 
     @Test
     void testEventBusFiresOnAddPunishment() {
         AtomicBoolean fired = new AtomicBoolean(false);
-        SanctionEventBus.setHandler(event -> {
-            if (event instanceof PunishmentExecuteEvent) {
-                fired.set(true);
-            }
-        });
+        ExecuteListener listener = new ExecuteListener(fired);
+        StandaloneEventAPI.getApi().register(listener);
 
         PunishmentRecord punishment = new PunishmentRecord(
                 1, 1, UUID.randomUUID(), UUID.randomUUID(), "Console",
@@ -44,12 +50,13 @@ public class SanctionManagerCoreTest {
         cache.put(punishment);
         assertNotNull(cache.findById(1));
 
-        SanctionEventBus.setHandler(event -> {});
+        StandaloneEventAPI.getApi().unregister(listener);
     }
 
     @Test
     void testEventCancellationPreventsAction() {
-        SanctionEventBus.setHandler(event -> event.canceled = true);
+        CancelListener listener = new CancelListener();
+        StandaloneEventAPI.getApi().register(listener);
 
         PunishmentRecord punishment = new PunishmentRecord(
                 2, 2, UUID.randomUUID(), UUID.randomUUID(), "Console",
@@ -60,7 +67,7 @@ public class SanctionManagerCoreTest {
         cache.put(punishment);
         assertNotNull(cache.findById(2));
 
-        SanctionEventBus.setHandler(event -> {});
+        StandaloneEventAPI.getApi().unregister(listener);
     }
 
     @Test
@@ -172,5 +179,25 @@ public class SanctionManagerCoreTest {
         assertEquals(100, record.getId());
         assertEquals(42, record.getRelId());
         assertEquals(Type.BAN, record.getType());
+    }
+
+    public static class ExecuteListener {
+        private final AtomicBoolean flag;
+
+        public ExecuteListener(AtomicBoolean flag) {
+            this.flag = flag;
+        }
+
+        @EventHandler
+        public void onPunishmentExecute(PunishmentExecuteEvent event) {
+            flag.set(true);
+        }
+    }
+
+    public static class CancelListener {
+        @EventHandler
+        public void onCancel(PunishmentRemoveEvent event) {
+            event.canceled = true;
+        }
     }
 }
