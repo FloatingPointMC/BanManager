@@ -8,22 +8,30 @@ import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftProvider;
 import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
+import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
 import io.github.floatingpointmc.sanctionmanager.velocity.command.VelocityCommandSender;
+import io.github.floatingpointmc.sanctionmanager.velocity.command.VelocitySanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.velocity.config.Config;
 import io.github.floatingpointmc.sanctionmanager.velocity.listener.PlayerListener;
 import org.bstats.velocity.Metrics;
 import org.incendo.cloud.SenderMapper;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.velocity.VelocityCommandManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class VelocityMain {
     private static final int PLUGIN_ID = 34210;
@@ -33,6 +41,36 @@ public class VelocityMain {
     private final PluginContainer pluginContainer;
     private final Metrics.Factory metricsFactory;
     private MinecraftSanctionManager manager;
+
+    private final MinecraftProvider provider = new MinecraftProvider() {
+        @Override
+        public @NotNull Collection<String> getPlayerNames() {
+            return proxy.getAllPlayers().stream()
+                    .map(com.velocitypowered.api.proxy.Player::getUsername)
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public @NotNull Collection<UUID> getPlayerUUIDs() {
+            return proxy.getAllPlayers().stream()
+                    .map(com.velocitypowered.api.proxy.Player::getUniqueId)
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public @Nullable SanctionPlayer getPlayer(@NotNull UUID uuid) {
+            return proxy.getPlayer(uuid)
+                    .map(VelocitySanctionPlayer::new)
+                    .orElse(null);
+        }
+
+        @Override
+        public @Nullable SanctionPlayer getPlayer(@NotNull String name) {
+            return proxy.getPlayer(name)
+                    .map(VelocitySanctionPlayer::new)
+                    .orElse(null);
+        }
+    };
 
     @Inject
     public VelocityMain(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory, PluginContainer pluginContainer, Metrics.Factory metricsFactory) {
@@ -62,6 +100,7 @@ public class VelocityMain {
                 .toString();
 
         manager = new MinecraftSanctionManager(
+                provider,
                 config.getBoolean("storage.database.enabled", true),
                 config.getString("storage.database.driver", "com.mysql.cj.jdbc.Driver"),
                 config.getString("storage.database.host", "localhost"),
@@ -83,7 +122,7 @@ public class VelocityMain {
                                     VelocityCommandSender::new,
                                     mapped -> ((VelocityCommandSender) mapped).commandSource
                             ));
-            new SanctionCommandManager(commandManager, messageConfig, contextTemplate).buildCommands();
+            new SanctionCommandManager(commandManager, manager, messageConfig, contextTemplate).buildCommands();
 
             proxy.getEventManager().register(this, new PlayerListener(
                     SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));

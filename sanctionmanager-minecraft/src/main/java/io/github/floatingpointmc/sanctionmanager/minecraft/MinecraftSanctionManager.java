@@ -6,10 +6,11 @@ import io.github.floatingpointmc.sanctionmanager.core.config.DatabaseConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.RedisConfig;
 import io.github.floatingpointmc.sanctionmanager.core.config.StorageConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class MinecraftSanctionManager {
     private final @NotNull SanctionManagerCore core;
-    public static @NotNull MinecraftProvider provider;
+    private final @Nullable MinecraftProvider provider;
 
     public MinecraftSanctionManager(@NotNull MinecraftProvider provider, @NotNull StorageConfig storageConfig) {
         this.provider = provider;
@@ -44,12 +45,49 @@ public class MinecraftSanctionManager {
         this.core = new SanctionManagerCore(storageConfig);
     }
 
+    public MinecraftSanctionManager(@NotNull StorageConfig storageConfig) {
+        this.provider = null;
+        this.core = new SanctionManagerCore(storageConfig);
+    }
+
+    public MinecraftSanctionManager(boolean databaseEnabled, @NotNull String driver, @NotNull String host, int port,
+                                    @NotNull String database, @NotNull String user, @NotNull String password,
+                                    boolean redisEnabled, @NotNull String redisHost, int redisPort, @NotNull String redisPassword,
+                                    @NotNull String binaryDataDir) {
+        this.provider = null;
+        DatabaseConfig databaseConfig = DatabaseConfig.builder()
+                .driver(driver)
+                .host(host)
+                .port(port)
+                .database(database)
+                .user(user)
+                .password(password)
+                .build();
+        RedisConfig redisConfig = RedisConfig.builder()
+                .host(redisHost)
+                .port(redisPort)
+                .password(redisPassword)
+                .build();
+        StorageConfig storageConfig = StorageConfig.builder()
+                .databaseEnabled(databaseEnabled)
+                .redisEnabled(redisEnabled)
+                .databaseConfig(databaseConfig)
+                .redisConfig(redisConfig)
+                .binaryDataDir(binaryDataDir)
+                .build();
+        this.core = new SanctionManagerCore(storageConfig);
+    }
+
     public @NotNull PunishmentManagerAPI getPunishmentManager() {
         return core.getPunishManager();
     }
 
     public @NotNull SanctionManagerCore getCore() {
         return core;
+    }
+
+    public @Nullable MinecraftProvider getProvider() {
+        return provider;
     }
 
     public void shutdown() {

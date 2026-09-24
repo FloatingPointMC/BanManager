@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SanctionCommandArgument<T> {
-    private final @NotNull String literal; // TODO: Read messages.yml -> arguments-{LITERAL}
+    private final @NotNull String literal;
     private final @NotNull ParserDescriptor<SanctionCommandSender, T> parser;
     private @Nullable SuggestionProvider<SanctionCommandSender> suggestionProvider;
     private boolean optional;

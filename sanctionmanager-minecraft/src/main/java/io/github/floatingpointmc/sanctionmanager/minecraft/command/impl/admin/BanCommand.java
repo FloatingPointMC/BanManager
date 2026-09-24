@@ -1,22 +1,159 @@
 package io.github.floatingpointmc.sanctionmanager.minecraft.command.impl.admin;
 
-import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
-import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionCommandArgument;
-import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
+import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
+import io.github.floatingpointmc.sanctionmanager.core.model.PunishmentRecord;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.impl.AdminCommand;
+import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
+import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftProvider;
+import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionCommandArgument;
+import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
 import org.incendo.cloud.context.CommandContext;
 import org.incendo.cloud.parser.standard.StringParser;
 import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.UUID;
 
 public class BanCommand extends AdminCommand {
+    private final @NotNull MinecraftSanctionManager manager;
+    private final @NotNull MessageConfig messageConfig;
+    private final @NotNull MessageContext contextTemplate;
+
+    public BanCommand(@NotNull MinecraftSanctionManager manager, @NotNull MessageConfig messageConfig, @NotNull MessageContext contextTemplate) {
+        this.manager = manager;
+        this.messageConfig = messageConfig;
+        this.contextTemplate = contextTemplate;
+    }
+
     @Override
     public void execute(@NotNull CommandContext<SanctionCommandSender> context) {
+        SanctionCommandSender sender = context.sender();
+        String targetName = context.get("player");
+        String durationStr = context.<String>optional("duration").orElse(null);
+        String reason = context.<String>optional("reason").orElse(null);
 
+        MinecraftProvider provider = manager.getProvider();
+        if (provider == null) {
+            sender.sendMessage("MinecraftProvider is not available.");
+            return;
+        }
+
+        SanctionPlayer targetPlayer = provider.getPlayer(targetName);
+        UUID targetUuid;
+        String resolvedName;
+        if (targetPlayer != null) {
+            targetUuid = targetPlayer.getUniqueId();
+            resolvedName = targetPlayer.getName();
+        } else {
+            sender.sendMessage("Player '" + targetName + "' not found.");
+            return;
+        }
+
+        LocalDateTime expiryTime = null;
+        if (durationStr != null) {
+            try {
+                long seconds = parseDuration(durationStr);
+                expiryTime = LocalDateTime.now().plusSeconds(seconds);
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage("Invalid duration format: " + durationStr);
+                return;
+            }
+        }
+
+        UUID executorUuid = sender instanceof SanctionPlayer ? ((SanctionPlayer) sender).getUniqueId() : null;
+        String operatorName = sender instanceof SanctionPlayer ? ((SanctionPlayer) sender).getName() : "[Console]";
+
+        PunishmentRecord punishment = new PunishmentRecord(
+                0, 0,
+                targetUuid,
+                executorUuid,
+                operatorName,
+                LocalDateTime.now(),
+                expiryTime,
+                false, null, false, null,
+                false, null,
+                reason,
+                Type.BAN
+        );
+
+        PunishmentManagerAPI punishManager = manager.getPunishmentManager();
+        punishManager.addPunishment(punishment);
+
+        MessageContext.Punishment msgContext = MessageContext.Punishment.builder()
+                .id(punishment.getId())
+                .relId(punishment.getRelId())
+                .target(targetUuid)
+                .targetName(resolvedName)
+                .executor(executorUuid != null ? executorUuid : new UUID(0, 0))
+                .operatorName(operatorName)
+                .executingTime(punishment.getExecutingTime())
+                .expiryTime(expiryTime)
+                .reason(reason)
+                .pluginName(contextTemplate.getPluginName())
+                .pluginVersion(contextTemplate.getPluginVersion())
+                .build();
+
+        boolean isTemp = expiryTime != null;
+        java.util.List<String> lines = isTemp ? messageConfig.getBanTemporary() : messageConfig.getBanPermanent();
+        for (String line : MessageFormatter.formatLines(lines, msgContext)) {
+            sender.sendMessage(line);
+        }
+
+        if (targetPlayer != null && targetPlayer.isOnline()) {
+            String kickMessage = MessageFormatter.format(lines, msgContext);
+            targetPlayer.kick(kickMessage);
+        }
+    }
+
+    private long parseDuration(@NotNull String input) {
+        long totalSeconds = 0;
+        StringBuilder number = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            if (Character.isDigit(c)) {
+                number.append(c);
+            } else {
+                if (number.length() == 0) {
+                    throw new IllegalArgumentException("Invalid duration: " + input);
+                }
+                long value = Long.parseLong(number.toString());
+                number.setLength(0);
+                switch (c) {
+                    case 's':
+                        totalSeconds += value;
+                        break;
+                    case 'm':
+                        totalSeconds += value * 60;
+                        break;
+                    case 'h':
+                        totalSeconds += value * 3600;
+                        break;
+                    case 'd':
+                        totalSeconds += value * 86400;
+                        break;
+                    case 'w':
+                        totalSeconds += value * 604800;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown duration unit: " + c);
+                }
+            }
+        }
+        if (number.length() > 0) {
+            totalSeconds += Long.parseLong(number.toString());
+        }
+        if (totalSeconds <= 0) {
+            throw new IllegalArgumentException("Duration must be positive: " + input);
+        }
+        return totalSeconds;
     }
 
     @Override
@@ -26,8 +163,11 @@ public class BanCommand extends AdminCommand {
 
     @Override
     public @Nullable Collection<SanctionCommandArgument<?>> getArguments() {
+        SuggestionProvider<SanctionCommandSender> playerSuggestions = SuggestionProvider.suggestingStrings(
+                manager.getProvider() != null ? manager.getProvider().getPlayerNames() : java.util.Collections.emptyList()
+        );
         return Arrays.asList(
-                SanctionCommandArgument.build("player", StringParser.stringParser()).suggestionProvider(SuggestionProvider.suggestingStrings(MinecraftSanctionManager.provider.getPlayerNames())),
+                SanctionCommandArgument.build("player", StringParser.stringParser()).suggestionProvider(playerSuggestions),
                 SanctionCommandArgument.build("duration", StringParser.stringParser()).optional(),
                 SanctionCommandArgument.build("reason", StringParser.stringParser()).optional()
         );

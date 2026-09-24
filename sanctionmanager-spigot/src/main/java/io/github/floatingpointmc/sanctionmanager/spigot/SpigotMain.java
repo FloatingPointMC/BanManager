@@ -1,27 +1,64 @@
 package io.github.floatingpointmc.sanctionmanager.spigot;
 
 import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
+import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftProvider;
 import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
+import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
 import io.github.floatingpointmc.sanctionmanager.spigot.bridge.SanctionManagerBridge;
 import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotCommandSender;
+import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotSanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.spigot.listener.PlayerListener;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.incendo.cloud.SenderMapper;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.paper.LegacyPaperCommandManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class SpigotMain extends JavaPlugin {
     private static final int PLUGIN_ID = 34182;
     private MinecraftSanctionManager manager;
+
+    private final MinecraftProvider provider = new MinecraftProvider() {
+        @Override
+        public @NotNull Collection<String> getPlayerNames() {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(org.bukkit.entity.Player::getName)
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public @NotNull Collection<UUID> getPlayerUUIDs() {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(org.bukkit.entity.Player::getUniqueId)
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public @Nullable SanctionPlayer getPlayer(@NotNull UUID uuid) {
+            org.bukkit.entity.Player player = Bukkit.getPlayer(uuid);
+            return player != null ? new SpigotSanctionPlayer(player) : null;
+        }
+
+        @Override
+        public @Nullable SanctionPlayer getPlayer(@NotNull String name) {
+            org.bukkit.entity.Player player = Bukkit.getPlayer(name);
+            return player != null ? new SpigotSanctionPlayer(player) : null;
+        }
+    };
 
     @Override
     public void onEnable() {
@@ -41,6 +78,7 @@ public class SpigotMain extends JavaPlugin {
                     .toString();
 
             manager = new MinecraftSanctionManager(
+                    provider,
                     getConfig().getBoolean("storage.database.enabled", true),
                     getConfig().getString("storage.database.driver", "com.mysql.cj.jdbc.Driver"),
                     getConfig().getString("storage.database.host", "localhost"),
@@ -60,7 +98,7 @@ public class SpigotMain extends JavaPlugin {
                                     SpigotCommandSender::new,
                                     mapped -> ((SpigotCommandSender) mapped).commandSender
                             ));
-            new SanctionCommandManager(commandManager, messageConfig, contextTemplate).buildCommands();
+            new SanctionCommandManager(commandManager, manager, messageConfig, contextTemplate).buildCommands();
 
             getServer().getPluginManager().registerEvents(
                     new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
