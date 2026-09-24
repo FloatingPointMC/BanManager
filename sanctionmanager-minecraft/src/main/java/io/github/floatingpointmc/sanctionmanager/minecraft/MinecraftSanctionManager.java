@@ -9,15 +9,18 @@ import org.jetbrains.annotations.NotNull;
 
 public class MinecraftSanctionManager {
     private final @NotNull SanctionManagerCore core;
+    public static @NotNull MinecraftProvider provider;
 
-    public MinecraftSanctionManager(@NotNull StorageConfig storageConfig) {
+    public MinecraftSanctionManager(@NotNull MinecraftProvider provider, @NotNull StorageConfig storageConfig) {
+        this.provider = provider;
         this.core = new SanctionManagerCore(storageConfig);
     }
 
-    public MinecraftSanctionManager(boolean databaseEnabled, @NotNull String driver, @NotNull String host, int port,
+    public MinecraftSanctionManager(@NotNull MinecraftProvider provider, boolean databaseEnabled, @NotNull String driver, @NotNull String host, int port,
                                     @NotNull String database, @NotNull String user, @NotNull String password,
                                     boolean redisEnabled, @NotNull String redisHost, int redisPort, @NotNull String redisPassword,
                                     @NotNull String binaryDataDir) {
+        this.provider = provider;
         DatabaseConfig databaseConfig = DatabaseConfig.builder()
                 .driver(driver)
                 .host(host)

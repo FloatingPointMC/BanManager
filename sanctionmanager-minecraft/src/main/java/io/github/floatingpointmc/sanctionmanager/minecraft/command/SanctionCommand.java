@@ -1,13 +1,19 @@
 package io.github.floatingpointmc.sanctionmanager.minecraft.command;
 
-import org.incendo.cloud.Command;
+import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionCommandArgument;
 import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.permission.Permission;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
 
 public interface SanctionCommand {
-    @NotNull String getName();
-
     void execute(@NotNull CommandContext<SanctionCommandSender> context);
 
-    @NotNull Command.Builder<SanctionCommandSender> arguments(Command.Builder<SanctionCommandSender> sanctionCommandSenderBuilder);
+    @NotNull String getName();
+
+    @Nullable Collection<SanctionCommandArgument<?>> getArguments();
+
+    @NotNull Permission getRequiredPermission();
 }
