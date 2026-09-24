@@ -33,4 +33,15 @@ public class DatabaseConfig {
         }
         return "jdbc://" + host + ":" + port + "/" + database;
     }
+
+    public static @NotNull DatabaseConfig defaults() {
+        return DatabaseConfig.builder()
+                .driver("com.mysql.cj.jdbc.Driver")
+                .host("localhost")
+                .port(3306)
+                .database("sanctionmanager")
+                .user("root")
+                .password("")
+                .build();
+    }
 }

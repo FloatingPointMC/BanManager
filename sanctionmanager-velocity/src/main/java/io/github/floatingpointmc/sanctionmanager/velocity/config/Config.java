@@ -65,6 +65,12 @@ public class Config {
         return value instanceof Number ? ((Number) value).intValue() : def;
     }
 
+    public boolean getBoolean(String path, boolean def) {
+        ensureLoaded();
+        Object value = getNested(data, path);
+        return value instanceof Boolean ? (Boolean) value : def;
+    }
+
     public List<String> getStringList(String path) {
         ensureLoaded();
         Object value = getNested(data, path);

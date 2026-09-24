@@ -11,8 +11,8 @@ plugins {
 
 rootProject.name = "SanctionManager"
 include("sanctionmanager-api")
-include("sanctionmanager-spigot")
 include("sanctionmanager-core")
+include("sanctionmanager-minecraft")
+include("sanctionmanager-spigot")
 include("sanctionmanager-bungee")
 include("sanctionmanager-velocity")
-include("sanctionmanager-minecraft")

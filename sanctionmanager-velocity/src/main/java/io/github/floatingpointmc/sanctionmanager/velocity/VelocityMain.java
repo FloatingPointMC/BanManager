@@ -9,7 +9,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
-import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
@@ -57,13 +57,23 @@ public class VelocityMain {
                 .pluginVersion(pluginContainer.getDescription().getVersion().orElse("unknown"))
                 .build();
 
+        String binaryDir = dataDirectory
+                .resolve(config.getString("storage.binary.directory", "data"))
+                .toString();
+
         manager = new MinecraftSanctionManager(
-                config.getString("database.driver", "com.mysql.cj.jdbc.Driver"),
-                config.getString("database.host", "localhost"),
-                config.getInt("database.port", 3306),
-                config.getString("database.database", "sanctionmanager"),
-                config.getString("database.user", "root"),
-                config.getString("database.password", ""));
+                config.getBoolean("storage.database.enabled", true),
+                config.getString("storage.database.driver", "com.mysql.cj.jdbc.Driver"),
+                config.getString("storage.database.host", "localhost"),
+                config.getInt("storage.database.port", 3306),
+                config.getString("storage.database.database", "sanctionmanager"),
+                config.getString("storage.database.user", "root"),
+                config.getString("storage.database.password", ""),
+                config.getBoolean("storage.redis.enabled", false),
+                config.getString("storage.redis.host", "localhost"),
+                config.getInt("storage.redis.port", 6379),
+                config.getString("storage.redis.password", ""),
+                binaryDir);
 
         if ("standalone".equals(mode)) {
             VelocityCommandManager<SanctionCommandSender> commandManager =
@@ -73,7 +83,7 @@ public class VelocityMain {
                                     VelocityCommandSender::new,
                                     mapped -> ((VelocityCommandSender) mapped).commandSource
                             ));
-            new SanctionCommand(commandManager, messageConfig, contextTemplate).buildCommands();
+            new SanctionCommandManager(commandManager, messageConfig, contextTemplate).buildCommands();
 
             proxy.getEventManager().register(this, new PlayerListener(
                     SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));

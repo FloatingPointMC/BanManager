@@ -86,7 +86,7 @@ Core never references `Player`, `CommandSender`, `Bukkit`, `Component`, `Cloud`,
 `sanctionmanager-minecraft` is the Minecraft-specific integration layer. It bridges Minecraft-facing concerns to the core:
 
 * `MinecraftSanctionManager` — initializes `SanctionManagerCore` and exposes `PunishmentManagerAPI`
-* `SanctionCommand` — Cloud-based command handler for the `/sanction` command
+* `SanctionCommandManager` — Cloud-based command handler for the `/sanction` command
 * `SanctionCommandSender` — platform-independent command sender abstraction
 * `MessageConfig` — configurable message templates (ban permanent/temporary, mute permanent/temporary, description)
 * `MessageContext` — template variable context (punishment data, plugin name/version)
@@ -151,7 +151,7 @@ Each platform adapter provides:
 * A `CommandManager<SanctionCommandSender>` instance (Cloud Paper, Cloud Bungee, or Cloud Velocity)
 * A `SanctionCommandSender` implementation that wraps the platform's `CommandSource`
 
-The command logic itself lives in `SanctionCommand` within `sanctionmanager-minecraft`.
+The command logic itself lives in `SanctionCommandManager` within `sanctionmanager-minecraft`.
 
 ## Modules
 

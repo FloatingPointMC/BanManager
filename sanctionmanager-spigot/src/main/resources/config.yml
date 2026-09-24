@@ -1,14 +1,18 @@
 mode: standalone # standalone or bridge
 
-redis:
-  enable: false
-  host: localhost
-  port: 6379
-  password: ""
-database:
-  driver: com.mysql.cj.jdbc.Driver
-  host: localhost
-  port: 3306
-  database: sanctionmanager
-  user: root
-  password: ""
+storage:
+  database:
+    enabled: true
+    driver: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: sanctionmanager
+    user: root
+    password: ""
+  redis:
+    enabled: false
+    host: localhost
+    port: 6379
+    password: ""
+  binary:
+    directory: data

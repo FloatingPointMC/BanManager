@@ -2,7 +2,7 @@ package io.github.floatingpointmc.sanctionmanager.spigot;
 
 import io.github.floatingpointmc.sanctionmanager.api.SanctionManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
-import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
@@ -36,13 +36,23 @@ public class SpigotMain extends JavaPlugin {
                     .pluginVersion(getDescription().getVersion())
                     .build();
 
+            String binaryDir = getDataFolder().toPath()
+                    .resolve(getConfig().getString("storage.binary.directory", "data"))
+                    .toString();
+
             manager = new MinecraftSanctionManager(
-                    getConfig().getString("database.driver", "com.mysql.cj.jdbc.Driver"),
-                    getConfig().getString("database.host", "localhost"),
-                    getConfig().getInt("database.port", 3306),
-                    getConfig().getString("database.database", "sanctionmanager"),
-                    getConfig().getString("database.user", "root"),
-                    getConfig().getString("database.password", ""));
+                    getConfig().getBoolean("storage.database.enabled", true),
+                    getConfig().getString("storage.database.driver", "com.mysql.cj.jdbc.Driver"),
+                    getConfig().getString("storage.database.host", "localhost"),
+                    getConfig().getInt("storage.database.port", 3306),
+                    getConfig().getString("storage.database.database", "sanctionmanager"),
+                    getConfig().getString("storage.database.user", "root"),
+                    getConfig().getString("storage.database.password", ""),
+                    getConfig().getBoolean("storage.redis.enabled", false),
+                    getConfig().getString("storage.redis.host", "localhost"),
+                    getConfig().getInt("storage.redis.port", 6379),
+                    getConfig().getString("storage.redis.password", ""),
+                    binaryDir);
 
             LegacyPaperCommandManager<SanctionCommandSender> commandManager =
                     new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(),
@@ -50,7 +60,7 @@ public class SpigotMain extends JavaPlugin {
                                     SpigotCommandSender::new,
                                     mapped -> ((SpigotCommandSender) mapped).commandSender
                             ));
-            new SanctionCommand(commandManager, messageConfig, contextTemplate).buildCommands();
+            new SanctionCommandManager(commandManager, messageConfig, contextTemplate).buildCommands();
 
             getServer().getPluginManager().registerEvents(
                     new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);

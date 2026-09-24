@@ -1,25 +1,13 @@
 package io.github.floatingpointmc.sanctionmanager.minecraft.command;
 
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
-import lombok.RequiredArgsConstructor;
-import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.context.CommandContext;
+import org.jetbrains.annotations.NotNull;
 
-@RequiredArgsConstructor
-public class SanctionCommand {
-    private final CommandManager<SanctionCommandSender> commandManager;
-    private final MessageConfig messageConfig;
-    private final MessageContext messageContext;
+public interface SanctionCommand {
+    @NotNull String getName();
 
-    public void buildCommands() {
-        commandManager.command(
-                commandManager.commandBuilder("sanction")
-                        .handler(context -> {
-                            for (String line : MessageFormatter.formatLines(messageConfig.getDescription(), messageContext)) {
-                                context.sender().sendMessage(line);
-                            }
-                        })
-        );
-    }
+    void execute(@NotNull CommandContext<SanctionCommandSender> context);
+
+    @NotNull Command.Builder<SanctionCommandSender> arguments(Command.Builder<SanctionCommandSender> sanctionCommandSenderBuilder);
 }

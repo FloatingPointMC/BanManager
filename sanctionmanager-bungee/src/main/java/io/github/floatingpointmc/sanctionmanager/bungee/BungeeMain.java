@@ -5,7 +5,7 @@ import io.github.floatingpointmc.sanctionmanager.bungee.command.BungeeCommandSen
 import io.github.floatingpointmc.sanctionmanager.bungee.config.Config;
 import io.github.floatingpointmc.sanctionmanager.bungee.listener.PlayerListener;
 import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionManager;
-import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommand;
+import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
 import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
@@ -42,13 +42,23 @@ public class BungeeMain extends Plugin {
                 .pluginVersion(getDescription().getVersion())
                 .build();
 
+        String binaryDir = getDataFolder().toPath()
+                .resolve(cfg.getString("storage.binary.directory", "data"))
+                .toString();
+
         manager = new MinecraftSanctionManager(
-                cfg.getString("database.driver", "com.mysql.cj.jdbc.Driver"),
-                cfg.getString("database.host", "localhost"),
-                cfg.getInt("database.port", 3306),
-                cfg.getString("database.database", "sanctionmanager"),
-                cfg.getString("database.user", "root"),
-                cfg.getString("database.password", ""));
+                cfg.getBoolean("storage.database.enabled", true),
+                cfg.getString("storage.database.driver", "com.mysql.cj.jdbc.Driver"),
+                cfg.getString("storage.database.host", "localhost"),
+                cfg.getInt("storage.database.port", 3306),
+                cfg.getString("storage.database.database", "sanctionmanager"),
+                cfg.getString("storage.database.user", "root"),
+                cfg.getString("storage.database.password", ""),
+                cfg.getBoolean("storage.redis.enabled", false),
+                cfg.getString("storage.redis.host", "localhost"),
+                cfg.getInt("storage.redis.port", 6379),
+                cfg.getString("storage.redis.password", ""),
+                binaryDir);
 
         if ("standalone".equals(mode)) {
             BungeeCommandManager<SanctionCommandSender> commandManager =
@@ -57,7 +67,7 @@ public class BungeeMain extends Plugin {
                                     BungeeCommandSender::new,
                                     mapped -> ((BungeeCommandSender) mapped).commandSender
                             ));
-            new SanctionCommand(commandManager, messageConfig, contextTemplate).buildCommands();
+            new SanctionCommandManager(commandManager, messageConfig, contextTemplate).buildCommands();
             getLogger().info("SanctionManager is running in standalone mode.");
         } else {
             getLogger().info("SanctionManager is running in proxy mode, no commands available.");
