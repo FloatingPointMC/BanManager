@@ -3,9 +3,9 @@ package io.github.floatingpointmc.sanctionmanager.bungee.listener;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
@@ -20,12 +20,12 @@ import java.util.UUID;
 
 public class PlayerListener implements Listener {
     private final PunishmentManagerAPI punishManager;
-    private final MessageConfig messageConfig;
-    private final MessageContext contextTemplate;
+    private final TranslationConfig translationConfig;
+    private final TranslationContext contextTemplate;
 
-    public PlayerListener(PunishmentManagerAPI punishManager, MessageConfig messageConfig, MessageContext contextTemplate) {
+    public PlayerListener(PunishmentManagerAPI punishManager, TranslationConfig translationConfig, TranslationContext contextTemplate) {
         this.punishManager = punishManager;
-        this.messageConfig = messageConfig;
+        this.translationConfig = translationConfig;
         this.contextTemplate = contextTemplate;
     }
 
@@ -36,9 +36,9 @@ public class PlayerListener implements Listener {
 
         for (Punishment p : active) {
             if (p.getType() == Type.BAN) {
-                List<String> lines = MessageFormatter.isTemporary(toContext(p, event.getConnection().getName())) ? messageConfig.getBanTemporary() : messageConfig.getBanPermanent();
+                List<String> lines = TranslationFormatter.isTemporary(toContext(p, event.getConnection().getName())) ? translationConfig.getStringList("ban.temporary") : translationConfig.getStringList("ban.permanent");
                 event.setCancelled(true);
-                event.setReason(new TextComponent(MessageFormatter.format(lines, toContext(p, event.getConnection().getName()))));
+                event.setReason(new TextComponent(TranslationFormatter.format(lines, toContext(p, event.getConnection().getName()))));
                 return;
             }
         }
@@ -51,8 +51,8 @@ public class PlayerListener implements Listener {
             Collection<Punishment> active = punishManager.queryActivePunishments(uuid);
             for (Punishment p : active) {
                 if (p.getType() == Type.MUTE) {
-                    List<String> lines = MessageFormatter.isTemporary(toContext(p, player.getName())) ? messageConfig.getMuteTemporary() : messageConfig.getMutePermanent();
-                    for (String line : MessageFormatter.formatLines(lines, toContext(p, player.getName()))) {
+                    List<String> lines = TranslationFormatter.isTemporary(toContext(p, player.getName())) ? translationConfig.getStringList("mute.temporary") : translationConfig.getStringList("mute.permanent");
+                    for (String line : TranslationFormatter.formatLines(lines, toContext(p, player.getName()))) {
                         player.sendMessage(new TextComponent(line));
                     }
                     event.setCancelled(true);
@@ -62,8 +62,8 @@ public class PlayerListener implements Listener {
         }
     }
 
-    private MessageContext.Punishment toContext(Punishment p, String targetName) {
-        return MessageContext.Punishment.builder()
+    private TranslationContext.Punishment toContext(Punishment p, String targetName) {
+        return TranslationContext.Punishment.builder()
                 .id(p.getId())
                 .relId(p.getRelId())
                 .target(p.getTarget())

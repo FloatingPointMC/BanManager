@@ -13,8 +13,8 @@ import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionMana
 import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import io.github.floatingpointmc.sanctionmanager.velocity.command.VelocityCommandSender;
 import io.github.floatingpointmc.sanctionmanager.velocity.command.VelocitySanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.velocity.config.Config;
@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -85,12 +84,12 @@ public class VelocityMain {
     public void onProxyInitialize(ProxyInitializeEvent event) {
         Config config = new Config(dataDirectory, logger);
         config.saveDefaultConfig();
-        config.saveDefaultMessages();
+        config.saveDefaultTranslations();
         metricsFactory.make(this, PLUGIN_ID);
 
         String mode = config.getString("mode");
-        MessageConfig messageConfig = loadMessageConfig(config);
-        MessageContext contextTemplate = MessageContext.builder()
+        TranslationConfig translationConfig = loadTranslationConfig(config);
+        TranslationContext contextTemplate = TranslationContext.builder()
                 .pluginName(pluginContainer.getDescription().getName().orElse("SanctionManager"))
                 .pluginVersion(pluginContainer.getDescription().getVersion().orElse("unknown"))
                 .build();
@@ -122,10 +121,10 @@ public class VelocityMain {
                                     VelocityCommandSender::new,
                                     mapped -> ((VelocityCommandSender) mapped).commandSource
                             ));
-            new SanctionCommandManager(commandManager, manager, messageConfig, contextTemplate).buildCommands();
+            new SanctionCommandManager(commandManager, manager, translationConfig, contextTemplate).buildCommands(true);
 
             proxy.getEventManager().register(this, new PlayerListener(
-                    SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
+                    SanctionManagerAPI.getAPI().getPunishManager(), translationConfig, contextTemplate));
 
             logger.info("SanctionManager is running in standalone mode.");
         } else {
@@ -141,13 +140,8 @@ public class VelocityMain {
         }
     }
 
-    private MessageConfig loadMessageConfig(Config config) {
-        return MessageConfig.builder()
-                .description(new ArrayList<>(config.getStringList("description")))
-                .banPermanent(new ArrayList<>(config.getStringList("ban.permanent")))
-                .banTemporary(new ArrayList<>(config.getStringList("ban.temporary")))
-                .mutePermanent(new ArrayList<>(config.getStringList("mute.permanent")))
-                .muteTemporary(new ArrayList<>(config.getStringList("mute.temporary")))
-                .build();
+    private TranslationConfig loadTranslationConfig(Config config) {
+        config.reloadTranslations();
+        return config.getTranslationConfig();
     }
 }

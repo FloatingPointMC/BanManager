@@ -6,8 +6,8 @@ import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionMana
 import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import io.github.floatingpointmc.sanctionmanager.spigot.bridge.SanctionManagerBridge;
 import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotCommandSender;
 import io.github.floatingpointmc.sanctionmanager.spigot.command.SpigotSanctionPlayer;
@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -63,16 +62,25 @@ public class SpigotMain extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        saveDefaultMessages();
+        saveDefaultTranslations();
         new Metrics(this, PLUGIN_ID);
         String mode = getConfig().getString("mode");
-        if (mode.equalsIgnoreCase("standalone")) {
-            MessageConfig messageConfig = loadMessageConfig();
-            MessageContext contextTemplate = MessageContext.builder()
-                    .pluginName(getDescription().getName())
-                    .pluginVersion(getDescription().getVersion())
-                    .build();
 
+        TranslationConfig translationConfig = loadTranslationConfig();
+        TranslationContext contextTemplate = TranslationContext.builder()
+                .pluginName(getDescription().getName())
+                .pluginVersion(getDescription().getVersion())
+                .build();
+
+
+        LegacyPaperCommandManager<SanctionCommandSender> commandManager =
+                new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(),
+                        SenderMapper.create(
+                                SpigotCommandSender::new,
+                                mapped -> ((SpigotCommandSender) mapped).commandSender
+                        ));
+        new SanctionCommandManager(commandManager, manager, translationConfig, contextTemplate).buildCommands("standalone".equals(mode));
+        if ("standalone".equals(mode)) {
             String binaryDir = getDataFolder().toPath()
                     .resolve(getConfig().getString("storage.binary.directory", "data"))
                     .toString();
@@ -92,16 +100,8 @@ public class SpigotMain extends JavaPlugin {
                     getConfig().getString("storage.redis.password", ""),
                     binaryDir);
 
-            LegacyPaperCommandManager<SanctionCommandSender> commandManager =
-                    new LegacyPaperCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(),
-                            SenderMapper.create(
-                                    SpigotCommandSender::new,
-                                    mapped -> ((SpigotCommandSender) mapped).commandSender
-                            ));
-            new SanctionCommandManager(commandManager, manager, messageConfig, contextTemplate).buildCommands();
-
             getServer().getPluginManager().registerEvents(
-                    new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate), this);
+                    new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), translationConfig, contextTemplate), this);
             getLogger().info("SanctionManager is running in standalone mode.");
         } else {
             getLogger().warning("SanctionManager is running under bridge mode, no features available.");
@@ -117,25 +117,20 @@ public class SpigotMain extends JavaPlugin {
         }
     }
 
-    private MessageConfig loadMessageConfig() {
-        File file = new File(getDataFolder(), "messages.yml");
+    @SuppressWarnings("unchecked")
+    private TranslationConfig loadTranslationConfig() {
+        File file = new File(getDataFolder(), "translations.yml");
         if (!file.exists()) {
-            saveResource("messages.yml", false);
+            saveResource("translations.yml", false);
         }
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-        return MessageConfig.builder()
-                .description(new ArrayList<>(config.getStringList("description")))
-                .banPermanent(new ArrayList<>(config.getStringList("ban.permanent")))
-                .banTemporary(new ArrayList<>(config.getStringList("ban.temporary")))
-                .mutePermanent(new ArrayList<>(config.getStringList("mute.permanent")))
-                .muteTemporary(new ArrayList<>(config.getStringList("mute.temporary")))
-                .build();
+        return new TranslationConfig(config.getValues(true));
     }
 
-    private void saveDefaultMessages() {
-        File file = new File(getDataFolder(), "messages.yml");
+    private void saveDefaultTranslations() {
+        File file = new File(getDataFolder(), "translations.yml");
         if (!file.exists()) {
-            saveResource("messages.yml", false);
+            saveResource("translations.yml", false);
         }
     }
 }

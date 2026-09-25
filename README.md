@@ -88,9 +88,9 @@ Core never references `Player`, `CommandSender`, `Bukkit`, `Component`, `Cloud`,
 * `MinecraftSanctionManager` — initializes `SanctionManagerCore` and exposes `PunishmentManagerAPI`
 * `SanctionCommandManager` — Cloud-based command handler for the `/sanction` command
 * `SanctionCommandSender` — platform-independent command sender abstraction
-* `MessageConfig` — configurable message templates (ban permanent/temporary, mute permanent/temporary, description)
-* `MessageContext` — template variable context (punishment data, plugin name/version)
-* `MessageFormatter` — variable substitution (`%name%`, `%reason%`, `%operator%`, `%duration%`, `%id%`, `%uuid%`, `%time%`, `%plugin%`, `%version%`)
+* `TranslationConfig` — generic translation configuration accessor with dot-path lookup and command convenience methods
+* `TranslationContext` — template variable context (punishment data, plugin name/version)
+* `TranslationFormatter` — variable substitution (`%name%`, `%reason%`, `%operator%`, `%duration%`, `%id%`, `%uuid%`, `%time%`, `%plugin%`, `%version%`)
 
 Cloud Command Framework belongs to this layer, not to core or platform adapters.
 
@@ -211,9 +211,9 @@ Supported drivers:
 * `org.postgresql.Driver` — PostgreSQL
 * `org.sqlite.JDBC` — SQLite
 
-### Messages
+### Translations
 
-Message templates are loaded from `messages.yml` and support the following variables:
+Translation templates are loaded from `translations.yml` and support the following variables:
 
 | Variable | Description |
 | -------- | ----------- |
@@ -350,7 +350,7 @@ Platform adapters use the Shadow plugin to produce self-contained JARs. Runtime 
 
 1. Build: `./gradlew :sanctionmanager-spigot:build`
 2. Place the JAR in the server's `plugins/` directory
-3. Configure `config.yml` and `messages.yml` in `plugins/SanctionManager/`
+3. Configure `config.yml` and `translations.yml` in `plugins/SanctionManager/`
 4. Restart the server
 
 Entry point: `io.github.floatingpointmc.sanctionmanager.spigot.SpigotMain`

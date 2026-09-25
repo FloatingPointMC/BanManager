@@ -9,9 +9,9 @@ import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftProvider;
 import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionCommandArgument;
 import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import org.incendo.cloud.context.CommandContext;
 import org.incendo.cloud.parser.standard.StringParser;
 import org.incendo.cloud.suggestion.SuggestionProvider;
@@ -25,12 +25,12 @@ import java.util.UUID;
 
 public class BanCommand extends AdminCommand {
     private final @NotNull MinecraftSanctionManager manager;
-    private final @NotNull MessageConfig messageConfig;
-    private final @NotNull MessageContext contextTemplate;
+    private final @NotNull TranslationConfig translationConfig;
+    private final @NotNull TranslationContext contextTemplate;
 
-    public BanCommand(@NotNull MinecraftSanctionManager manager, @NotNull MessageConfig messageConfig, @NotNull MessageContext contextTemplate) {
+    public BanCommand(@NotNull MinecraftSanctionManager manager, @NotNull TranslationConfig translationConfig, @NotNull TranslationContext contextTemplate) {
         this.manager = manager;
-        this.messageConfig = messageConfig;
+        this.translationConfig = translationConfig;
         this.contextTemplate = contextTemplate;
     }
 
@@ -88,7 +88,7 @@ public class BanCommand extends AdminCommand {
         PunishmentManagerAPI punishManager = manager.getPunishmentManager();
         punishManager.addPunishment(punishment);
 
-        MessageContext.Punishment msgContext = MessageContext.Punishment.builder()
+        TranslationContext.Punishment msgContext = TranslationContext.Punishment.builder()
                 .id(punishment.getId())
                 .relId(punishment.getRelId())
                 .target(targetUuid)
@@ -103,13 +103,13 @@ public class BanCommand extends AdminCommand {
                 .build();
 
         boolean isTemp = expiryTime != null;
-        java.util.List<String> lines = isTemp ? messageConfig.getBanTemporary() : messageConfig.getBanPermanent();
-        for (String line : MessageFormatter.formatLines(lines, msgContext)) {
+        java.util.List<String> lines = isTemp ? translationConfig.getStringList("ban.temporary") : translationConfig.getStringList("ban.permanent");
+        for (String line : TranslationFormatter.formatLines(lines, msgContext)) {
             sender.sendMessage(line);
         }
 
-        if (targetPlayer != null && targetPlayer.isOnline()) {
-            String kickMessage = MessageFormatter.format(lines, msgContext);
+        if (targetPlayer.isOnline()) {
+            String kickMessage = TranslationFormatter.format(lines, msgContext);
             targetPlayer.kick(kickMessage);
         }
     }

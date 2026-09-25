@@ -7,9 +7,9 @@ import com.velocitypowered.api.proxy.Player;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import net.kyori.adventure.text.Component;
 
 import java.util.Collection;
@@ -18,12 +18,12 @@ import java.util.UUID;
 
 public class PlayerListener {
     private final PunishmentManagerAPI punishManager;
-    private final MessageConfig messageConfig;
-    private final MessageContext contextTemplate;
+    private final TranslationConfig translationConfig;
+    private final TranslationContext contextTemplate;
 
-    public PlayerListener(PunishmentManagerAPI punishManager, MessageConfig messageConfig, MessageContext contextTemplate) {
+    public PlayerListener(PunishmentManagerAPI punishManager, TranslationConfig translationConfig, TranslationContext contextTemplate) {
         this.punishManager = punishManager;
-        this.messageConfig = messageConfig;
+        this.translationConfig = translationConfig;
         this.contextTemplate = contextTemplate;
     }
 
@@ -36,8 +36,8 @@ public class PlayerListener {
         for (Punishment p : active) {
             if (p.getType() == Type.BAN) {
                 String targetName = event.getUsername();
-                List<String> lines = MessageFormatter.isTemporary(toContext(p, targetName)) ? messageConfig.getBanTemporary() : messageConfig.getBanPermanent();
-                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(Component.text(MessageFormatter.format(lines, toContext(p, targetName)))));
+                List<String> lines = TranslationFormatter.isTemporary(toContext(p, targetName)) ? translationConfig.getStringList("ban.temporary") : translationConfig.getStringList("ban.permanent");
+                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(Component.text(TranslationFormatter.format(lines, toContext(p, targetName)))));
                 return;
             }
         }
@@ -51,8 +51,8 @@ public class PlayerListener {
         Collection<Punishment> active = punishManager.queryActivePunishments(uuid);
         for (Punishment p : active) {
             if (p.getType() == Type.MUTE) {
-                List<String> lines = MessageFormatter.isTemporary(toContext(p, player.getUsername())) ? messageConfig.getMuteTemporary() : messageConfig.getMutePermanent();
-                for (String line : MessageFormatter.formatLines(lines, toContext(p, player.getUsername()))) {
+                List<String> lines = TranslationFormatter.isTemporary(toContext(p, player.getUsername())) ? translationConfig.getStringList("mute.temporary") : translationConfig.getStringList("mute.permanent");
+                for (String line : TranslationFormatter.formatLines(lines, toContext(p, player.getUsername()))) {
                     player.sendMessage(Component.text(line));
                 }
                 event.setResult(PlayerChatEvent.ChatResult.denied());
@@ -61,8 +61,8 @@ public class PlayerListener {
         }
     }
 
-    private MessageContext.Punishment toContext(Punishment p, String targetName) {
-        return MessageContext.Punishment.builder()
+    private TranslationContext.Punishment toContext(Punishment p, String targetName) {
+        return TranslationContext.Punishment.builder()
                 .id(p.getId())
                 .relId(p.getRelId())
                 .target(p.getTarget())

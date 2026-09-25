@@ -14,6 +14,16 @@ description:
   - "\u00A71Running \u00A7bSanctionManager-%version% \u00A7eby vlouboos"
   - "\u00A73Type '/sm help' to view available commands."
   - "\u00A7b\u00A7l---------------------------------------------"
+
+command:
+  ban:
+    usage: /ban <Player> [Duration] [Reason]
+    desc: Ban a specific player.
+    arg:
+      player: The player to ban.
+      duration: The duration of the ban, default permanent.
+      reason: The reason for the ban.
+
 ban:
   permanent:
     - "\u00A7cYou are permanently banned from the server!"

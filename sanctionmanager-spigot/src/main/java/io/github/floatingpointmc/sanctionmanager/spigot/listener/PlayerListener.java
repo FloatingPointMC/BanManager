@@ -3,9 +3,9 @@ package io.github.floatingpointmc.sanctionmanager.spigot.listener;
 import io.github.floatingpointmc.sanctionmanager.api.management.PunishmentManagerAPI;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Punishment;
 import io.github.floatingpointmc.sanctionmanager.api.punishment.Type;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationFormatter;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,12 +18,12 @@ import java.util.UUID;
 
 public class PlayerListener implements Listener {
     private final PunishmentManagerAPI punishManager;
-    private final MessageConfig messageConfig;
-    private final MessageContext contextTemplate;
+    private final TranslationConfig translationConfig;
+    private final TranslationContext contextTemplate;
 
-    public PlayerListener(PunishmentManagerAPI punishManager, MessageConfig messageConfig, MessageContext contextTemplate) {
+    public PlayerListener(PunishmentManagerAPI punishManager, TranslationConfig translationConfig, TranslationContext contextTemplate) {
         this.punishManager = punishManager;
-        this.messageConfig = messageConfig;
+        this.translationConfig = translationConfig;
         this.contextTemplate = contextTemplate;
     }
 
@@ -34,8 +34,8 @@ public class PlayerListener implements Listener {
 
         for (Punishment p : active) {
             if (p.getType() == Type.BAN) {
-                List<String> lines = MessageFormatter.isTemporary(toContext(p, event.getName())) ? messageConfig.getBanTemporary() : messageConfig.getBanPermanent();
-                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, MessageFormatter.format(lines, toContext(p, event.getName())));
+                List<String> lines = TranslationFormatter.isTemporary(toContext(p, event.getName())) ? translationConfig.getStringList("ban.temporary") : translationConfig.getStringList("ban.permanent");
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, TranslationFormatter.format(lines, toContext(p, event.getName())));
                 return;
             }
         }
@@ -47,8 +47,8 @@ public class PlayerListener implements Listener {
         Collection<Punishment> active = punishManager.queryActivePunishments(uuid);
         for (Punishment p : active) {
             if (p.getType() == Type.MUTE) {
-                List<String> lines = MessageFormatter.isTemporary(toContext(p, event.getPlayer().getName())) ? messageConfig.getMuteTemporary() : messageConfig.getMutePermanent();
-                for (String line : MessageFormatter.formatLines(lines, toContext(p, event.getPlayer().getName()))) {
+                List<String> lines = TranslationFormatter.isTemporary(toContext(p, event.getPlayer().getName())) ? translationConfig.getStringList("mute.temporary") : translationConfig.getStringList("mute.permanent");
+                for (String line : TranslationFormatter.formatLines(lines, toContext(p, event.getPlayer().getName()))) {
                     event.getPlayer().sendMessage(line);
                 }
                 event.setCancelled(true);
@@ -57,8 +57,8 @@ public class PlayerListener implements Listener {
         }
     }
 
-    private MessageContext.Punishment toContext(Punishment p, String targetName) {
-        return MessageContext.Punishment.builder()
+    private TranslationContext.Punishment toContext(Punishment p, String targetName) {
+        return TranslationContext.Punishment.builder()
                 .id(p.getId())
                 .relId(p.getRelId())
                 .target(p.getTarget())

@@ -10,9 +10,8 @@ import io.github.floatingpointmc.sanctionmanager.minecraft.MinecraftSanctionMana
 import io.github.floatingpointmc.sanctionmanager.minecraft.SanctionPlayer;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandManager;
 import io.github.floatingpointmc.sanctionmanager.minecraft.command.SanctionCommandSender;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageConfig;
-import io.github.floatingpointmc.sanctionmanager.minecraft.config.MessageContext;
-import net.md_5.bungee.api.ProxyServer;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationContext;
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import org.bstats.bungeecord.Metrics;
@@ -23,8 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -69,12 +69,12 @@ public class BungeeMain extends Plugin {
     @Override
     public void onEnable() {
         config.saveDefaultConfig();
-        saveDefaultMessages();
+        saveDefaultTranslations();
         new Metrics(this, PLUGIN_ID);
         Configuration cfg = this.config.getConfig();
         String mode = cfg.getString("mode");
-        MessageConfig messageConfig = loadMessageConfig();
-        MessageContext contextTemplate = MessageContext.builder()
+        TranslationConfig translationConfig = loadTranslationConfig();
+        TranslationContext contextTemplate = TranslationContext.builder()
                 .pluginName(getDescription().getName())
                 .pluginVersion(getDescription().getVersion())
                 .build();
@@ -98,20 +98,20 @@ public class BungeeMain extends Plugin {
                 cfg.getString("storage.redis.password", ""),
                 binaryDir);
 
+        BungeeCommandManager<SanctionCommandSender> commandManager =
+                new BungeeCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(),
+                        SenderMapper.create(
+                                BungeeCommandSender::new,
+                                mapped -> ((BungeeCommandSender) mapped).commandSender
+                        ));
+        new SanctionCommandManager(commandManager, manager, translationConfig, contextTemplate).buildCommands("standalone".equals(mode));
         if ("standalone".equals(mode)) {
-            BungeeCommandManager<SanctionCommandSender> commandManager =
-                    new BungeeCommandManager<>(this, ExecutionCoordinator.asyncCoordinator(),
-                            SenderMapper.create(
-                                    BungeeCommandSender::new,
-                                    mapped -> ((BungeeCommandSender) mapped).commandSender
-                            ));
-            new SanctionCommandManager(commandManager, manager, messageConfig, contextTemplate).buildCommands();
             getLogger().info("SanctionManager is running in standalone mode.");
         } else {
             getLogger().info("SanctionManager is running in proxy mode, no commands available.");
         }
         getProxy().getPluginManager().registerListener(this,
-                new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), messageConfig, contextTemplate));
+                new PlayerListener(SanctionManagerAPI.getAPI().getPunishManager(), translationConfig, contextTemplate));
     }
 
     @Override
@@ -122,25 +122,36 @@ public class BungeeMain extends Plugin {
         }
     }
 
-    private MessageConfig loadMessageConfig() {
-        File file = new File(getDataFolder(), "messages.yml");
+    private TranslationConfig loadTranslationConfig() {
+        File file = new File(getDataFolder(), "translations.yml");
         if (!file.exists()) {
-            config.saveResource("messages.yml", false);
+            config.saveResource("translations.yml", false);
         }
         Configuration cfg = this.config.loadConfiguration(file);
-        return MessageConfig.builder()
-                .description(new ArrayList<>(cfg.getStringList("description")))
-                .banPermanent(new ArrayList<>(cfg.getStringList("ban.permanent")))
-                .banTemporary(new ArrayList<>(cfg.getStringList("ban.temporary")))
-                .mutePermanent(new ArrayList<>(cfg.getStringList("mute.permanent")))
-                .muteTemporary(new ArrayList<>(cfg.getStringList("mute.temporary")))
-                .build();
+        return new TranslationConfig(flattenConfiguration(cfg));
     }
 
-    private void saveDefaultMessages() {
-        File file = new File(getDataFolder(), "messages.yml");
+    private Map<String, Object> flattenConfiguration(Configuration cfg) {
+        Map<String, Object> result = new HashMap<>();
+        for (String key : cfg.getKeys()) {
+            Object value = cfg.get(key);
+            if (value instanceof Configuration) {
+                Map<String, Object> nested = flattenConfiguration((Configuration) value);
+                for (Map.Entry<String, Object> entry : nested.entrySet()) {
+                    result.put(key + "." + entry.getKey(), entry.getValue());
+                }
+                result.put(key, nested);
+            } else {
+                result.put(key, value);
+            }
+        }
+        return result;
+    }
+
+    private void saveDefaultTranslations() {
+        File file = new File(getDataFolder(), "translations.yml");
         if (!file.exists()) {
-            config.saveResource("messages.yml", false);
+            config.saveResource("translations.yml", false);
         }
     }
 }

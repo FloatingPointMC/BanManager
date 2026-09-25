@@ -1,5 +1,6 @@
 package io.github.floatingpointmc.sanctionmanager.velocity.config;
 
+import io.github.floatingpointmc.sanctionmanager.minecraft.config.TranslationConfig;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
@@ -13,6 +14,7 @@ public class Config {
     private final Path dataDirectory;
     private final Logger logger;
     private Map<String, Object> data;
+    private TranslationConfig translationConfig;
 
     public Config(Path dataDirectory, Logger logger) {
         this.dataDirectory = dataDirectory;
@@ -23,8 +25,8 @@ public class Config {
         saveResource("config.yml", false);
     }
 
-    public void saveDefaultMessages() {
-        saveResource("messages.yml", false);
+    public void saveDefaultTranslations() {
+        saveResource("translations.yml", false);
     }
 
     public void reloadConfig() {
@@ -41,6 +43,29 @@ public class Config {
             logger.error("Failed to load config.yml", e);
             data = new HashMap<>();
         }
+    }
+
+    public void reloadTranslations() {
+        Path file = dataDirectory.resolve("translations.yml");
+        if (!Files.exists(file)) {
+            translationConfig = TranslationConfig.defaults();
+            return;
+        }
+        try (InputStream in = Files.newInputStream(file)) {
+            Yaml yaml = new Yaml();
+            Map<String, Object> rawData = yaml.load(in);
+            translationConfig = new TranslationConfig(rawData != null ? rawData : new HashMap<>());
+        } catch (IOException e) {
+            logger.error("Failed to load translations.yml", e);
+            translationConfig = TranslationConfig.defaults();
+        }
+    }
+
+    public TranslationConfig getTranslationConfig() {
+        if (translationConfig == null) {
+            reloadTranslations();
+        }
+        return translationConfig;
     }
 
     private void ensureLoaded() {

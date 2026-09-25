@@ -1,5 +1,7 @@
 package io.github.floatingpointmc.sanctionmanager.minecraft.config;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,17 +10,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class MessageFormatter {
-
-    private MessageFormatter() {
-    }
-
-    public static boolean isTemporary(@NotNull MessageContext.Punishment context) {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class TranslationFormatter {
+    public static boolean isTemporary(@NotNull TranslationContext.Punishment context) {
         return context.getExpiryTime() != null;
     }
 
     public static @NotNull String replaceVariables(@NotNull String line,
-                                                   @NotNull MessageContext.Punishment context) {
+                                                   @NotNull TranslationContext.Punishment context) {
         String result = line;
         result = result.replace("%id%", String.valueOf(context.getId()));
         result = result.replace("%rel_id%", String.valueOf(context.getRelId()));
@@ -40,7 +39,7 @@ public final class MessageFormatter {
     }
 
     public static @NotNull String replaceVariables(@NotNull String line,
-                                                   @NotNull MessageContext context) {
+                                                   @NotNull TranslationContext context) {
         String result = line;
         result = result.replace("%plugin%", context.getPluginName());
         result = result.replace("%version%", context.getPluginVersion());
@@ -48,7 +47,7 @@ public final class MessageFormatter {
     }
 
     public static @NotNull String format(@NotNull List<String> lines,
-                                         @NotNull MessageContext.Punishment context) {
+                                         @NotNull TranslationContext.Punishment context) {
         StringBuilder sb = new StringBuilder();
         for (String line : lines) {
             if (sb.length() > 0) sb.append("\n");
@@ -58,7 +57,7 @@ public final class MessageFormatter {
     }
 
     public static @NotNull List<String> formatLines(@NotNull List<String> lines,
-                                                    @NotNull MessageContext.Punishment context) {
+                                                    @NotNull TranslationContext.Punishment context) {
         List<String> result = new ArrayList<>(lines.size());
         for (String line : lines) {
             result.add(replaceVariables(line, context));
@@ -67,7 +66,7 @@ public final class MessageFormatter {
     }
 
     public static @NotNull List<String> formatLines(@NotNull List<String> lines,
-                                                    @NotNull MessageContext context) {
+                                                    @NotNull TranslationContext context) {
         List<String> result = new ArrayList<>(lines.size());
         for (String line : lines) {
             result.add(replaceVariables(line, context));

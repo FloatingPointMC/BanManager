@@ -11,7 +11,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageContext {
+public class TranslationContext {
     private @NotNull String pluginName;
     private @NotNull String pluginVersion;
 
@@ -128,8 +128,8 @@ public class MessageContext {
             return this;
         }
 
-        public MessageContext build() {
-            return new MessageContext(pluginName, pluginVersion);
+        public TranslationContext build() {
+            return new TranslationContext(pluginName, pluginVersion);
         }
     }
 }
